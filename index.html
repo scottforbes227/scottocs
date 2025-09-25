@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>scott</title>
+    
+    <style>
+        :root {
+            --bg-main: #f6f6ef; --bg-page: #ffffff; --text-main: #222222; --text-muted: #888888;
+            --border-color: #cccccc; --accent-color: #0000ee; --button-bg: #e0e0e0;
+            --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: 'Courier New', Courier, monospace;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: var(--font-body); background: var(--bg-page); color: var(--text-main); line-height: 1.5; margin: 0; padding: 1.5rem; }
+        h1, h2 { font-family: var(--font-mono); color: var(--accent-color); margin-top: 1em; margin-bottom: 0.5em; font-weight: normal; }
+        hr { border: 0; border-top: 1px solid var(--border-color); margin: 2rem 0; }
+        a { color: var(--accent-color); }
+        a:hover { text-decoration: none; }
+        ul { list-style-type: square; padding-left: 2rem; }
+        em { color: var(--text-muted); font-style: normal; }
+        pre { font-family: var(--font-mono); color: var(--text-muted); margin-bottom: 2rem; white-space: pre; text-align: center; }
+        #password-container, #main-content { background: var(--bg-main); border: 1px solid var(--border-color); padding: 2rem; margin: 4rem auto; }
+        #password-container { max-width: 350px; text-align: center; }
+        #main-content { max-width: 650px; text-align: left; }
+        input[type="password"] { font-family: var(--font-mono); font-size: 1rem; padding: 0.5rem; margin-bottom: 1rem; border: 1px solid #999; background: var(--bg-page); width: 100%; }
+        input[type="password"]:focus { outline: 1px solid var(--accent-color); border-color: var(--accent-color); }
+        button { font-size: 1rem; padding: 0.5rem 1rem; background: var(--button-bg); border: 1px solid #888; cursor: pointer; border-style: outset; border-color: #f0f0f0 #808080 #808080 #f0f0f0; }
+        button:hover { background: #e8e8e8; }
+        button:active { border-style: inset; background: #d6d6d6; }
+        .hidden { display: none; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out forwards; }
+        .fade-out { animation: fadeOut 0.5s ease-in-out forwards; }
+        #password-error { color: red; visibility: hidden; opacity: 0; transition: opacity 0.3s ease; margin-top: 1rem; }
+        #password-error.visible { visibility: visible; opacity: 1; }
+        input.error { border-color: red !important; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        .frutiger-aero-theme {
+            --bg-main: #e0f7fa;
+            --bg-page: #ffffff;
+            --text-main: #00695c;
+            --text-muted: #004d40;
+            --border-color: #b2dfdb;
+            --accent-color: #00796b;
+            --button-bg: #b2ebf2;
+            --font-body: 'Comic Sans MS', 'Papyrus', cursive, fantasy, sans-serif;
+            --font-mono: 'Comic Sans MS', 'Papyrus', cursive, fantasy, monospace;
+            font-size: 2.2em !important;
+            text-transform: capitalize !important;
+            background: url('aero.jpg') center center/cover no-repeat fixed !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="password-container">
+        <pre id="ascii-art"></pre>
+        <h2>password pls</h2>
+        <input type="password" id="password-input" autofocus>
+        <button id="enter-button">print</button>
+        <p id="password-error">sorry mate</p>
+    </div>
+
+    <main id="main-content" class="hidden">
+        <header><h1 id="main-title"></h1><p>boot time: <span id="boot-time"></span></p></header><hr>
+                <section><h2>welcome</h2>
+                      <div id="geolocation"></div>
+                      <div id="current-time"></div>
+                      <div id="map" style="height: 300px; margin: 1em 0; border: 1px solid var(--border-color); border-radius: 8px;"></div>
+                      <div id="furthest-town-info" style="margin-top: 1em; font-family: var(--font-mono);"></div>
+                </section><hr>
+        <section><h2>scott facts</h2><h3>countries visited (<span id="countries-count">0</span>/197)</h3><ul id="countries-list"></ul><h3>currently reading</h3><div id="current-book"></div></section><hr>
+                <section><h2>time</h2>
+                    <div>age: <span id="current-age"></span></div>
+                    <div>death age (ONS): <span id="death-age"></span></div>
+                    <div id="percent-done" style="margin-top: 0.5rem; font-family: var(--font-mono);"></div>
+                      <div id="percent-left" style="font-family: var(--font-mono);"></div>
+                </section><hr>
+        <footer>
+    <div class="theme-switch-wrapper">
+        <label class="theme-switch" for="theme-checkbox">
+            <input type="checkbox" id="theme-checkbox" />
+            <div class="slider round"></div>
+        </label>
+        <em>aero mode</em>
+    </div>
+    <p><em>(c) 2000 scott forbes</em></p>
+</footer>
+    </main>
+
+    <script>
+    // Leaflet.js CDN
+    const leafletCss = document.createElement('link');
+    leafletCss.rel = 'stylesheet';
+    leafletCss.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(leafletCss);
+    const leafletJs = document.createElement('script');
+    leafletJs.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    document.head.appendChild(leafletJs);
+
+    document.addEventListener('DOMContentLoaded', () => {
+            const PASSWORD = "helloworld";
+            const BIRTH_DATE = new Date('2000-07-22T12:00:00');
+            const ESTIMATED_DEATH_AGE = 79.7;
+            const COUNTRIES_DATA = `albania\nargentina\narmenia\naustria\nazerbaijan\nbahamas\nbelgium\nbolivia\nbosnia and herzegovina\nbrazil\nbrunei\nbulgaria\ncambodia\ncanada\nchile\nchina\ncolombia\ncroatia\ncuba\ncyprus\nczech republic\ndenmark\necuador\negypt\nestonia\nfinland\nfrance\ngeorgia\ngermany\ngreece\nguatemala\nhungary\niceland\nindia\nireland\nisrael\nitaly\njapan\nkazakhstan\nkosovo\nkuwait\nkyrgyzstan\nlatvia\nlithuania\nluxembourg\nmalaysia\nmalta\nmexico\nmoldova\nmonaco\nmontenegro\nmorocco\nnetherlands\nnicaragua\nnorth macedonia\nnorway\npakistan\nparaguay\nperu\npoland\nportugal\nromania\nrussia\nsaudi arabia\nserbia\nslovakia\nslovenia\nsouth africa\nsouth korea\nspain\nsweden\nswitzerland\ntaiwan\nthailand\ntunisia\nturkey\nunited arab emirates\nunited kingdom\nunited states\nuzbekistan\nvatican city\nvietnam`;
+            const BOOKS_DATA = `lolita - nabokov`;
+
+            const penguinFrame1 = '  .--.\n |o_o |\n |:_/ |\n//   \\ \\\n(|     | )\n/\'\\_   _/`\\\n\\___)=(___/';
+            const penguinFrame2 = '  .--.\n |o_- |\n |:_/ |\n//   \\ \\\n(|     | )\n/\'\\_   _/`\\\n\\___)=(___/';
+
+            const asciiArtElement = document.getElementById('ascii-art');
+            const passwordContainer = document.getElementById('password-container');
+            const mainContent = document.getElementById('main-content');
+            const passwordInput = document.getElementById('password-input');
+            const enterButton = document.getElementById('enter-button');
+            const passwordError = document.getElementById('password-error');
+            
+            let isPenguinWinking = false;
+            const animatePenguin = () => {
+                isPenguinWinking = !isPenguinWinking;
+                asciiArtElement.textContent = isPenguinWinking ? penguinFrame2 : penguinFrame1;
+            };
+            
+            const checkPassword = () => {
+                if (passwordInput.value === PASSWORD) {
+                    passwordContainer.classList.add('fade-out');
+                    setTimeout(() => {
+                        passwordContainer.style.display = 'none';
+                        mainContent.classList.remove('hidden');
+                        mainContent.classList.add('fade-in');
+                        initializeDashboard();
+                    }, 500);
+                } else {
+                    passwordError.classList.add('visible');
+                    passwordInput.classList.add('error');
+                    setTimeout(() => {
+                        passwordError.classList.remove('visible');
+                        passwordInput.classList.remove('error');
+                    }, 1000);
+                    passwordInput.value = "";
+                }
+            };
+            
+            const initializeDashboard = () => {
+                typewriter("scottscottscott", 'main-title', 50);
+                document.getElementById('boot-time').textContent = new Date().toLocaleString();
+                loadLocalData();
+                getGeolocation();
+                updateLifeStats();
+                setInterval(updateLifeStats, 1000);
+            };
+            
+            const loadLocalData = () => {
+                const countries = COUNTRIES_DATA.trim().split('\n').filter(Boolean);
+                document.getElementById('countries-count').textContent = countries.length;
+                document.getElementById('countries-list').innerHTML = countries.map(c => `<li>${c}</li>`).join('');
+                const books = BOOKS_DATA.trim().split('\n').filter(Boolean);
+                document.getElementById('current-book').textContent = books[0] || "N/A";
+            };
+
+            const getGeolocation = () => {
+                const geoDiv = document.getElementById('geolocation');
+                if ('geolocation' in navigator) {
+                    navigator.geolocation.getCurrentPosition(
+                        p => { geoDiv.textContent = `location: ${p.coords.latitude.toFixed(4)}, ${p.coords.longitude.toFixed(4)}`.toLowerCase(); },
+                        () => { geoDiv.textContent = "location: permission denied.".toLowerCase(); }
+                    );
+                } else { geoDiv.textContent = "location: not available.".toLowerCase(); }
+            };
+            
+            const updateLifeStats = () => {
+                const now = new Date();
+                const ageInMs = now.getTime() - BIRTH_DATE.getTime();
+                const ageInYears = ageInMs / 31557600000; // ms in a Gregorian year
+                const percent = (ageInYears / ESTIMATED_DEATH_AGE) * 100;
+                const percentLeft = 100 - percent;
+                document.getElementById('current-age').textContent = ageInYears.toFixed(9).toLowerCase();
+                document.getElementById('death-age').textContent = ESTIMATED_DEATH_AGE.toString().toLowerCase();
+                document.getElementById('percent-done').textContent = `${percent.toFixed(2)}% done`.toLowerCase();
+                document.getElementById('percent-left').textContent = `${percentLeft.toFixed(2)}% left`.toLowerCase();
+                document.getElementById('current-time').textContent = `clock: ${now.toLocaleTimeString()}`.toLowerCase();
+            };
+
+            const typewriter = (text, id, speed) => {
+            // --- User Location & Furthest Town Feature ---
+            // List of major world towns with coordinates (sample, can be expanded)
+            const worldTowns = [
+                { name: 'Ushuaia', country: 'Argentina', lat: -54.8019, lng: -68.3030 },
+                { name: 'Longyearbyen', country: 'Norway', lat: 78.2232, lng: 15.6469 },
+                { name: 'Perth', country: 'Australia', lat: -31.9505, lng: 115.8605 },
+                { name: 'Invercargill', country: 'New Zealand', lat: -46.4132, lng: 168.3538 },
+                { name: 'Barrow', country: 'USA', lat: 71.2906, lng: -156.7887 },
+                { name: 'Cape Town', country: 'South Africa', lat: -33.9249, lng: 18.4241 },
+                { name: 'Reykjavik', country: 'Iceland', lat: 64.1466, lng: -21.9426 },
+                { name: 'Hobart', country: 'Australia', lat: -42.8821, lng: 147.3272 },
+                { name: 'Punta Arenas', country: 'Chile', lat: -53.1638, lng: -70.9171 },
+                { name: 'Anchorage', country: 'USA', lat: 61.2181, lng: -149.9003 }
+            ];
+
+            function haversine(lat1, lng1, lat2, lng2) {
+                const toRad = deg => deg * Math.PI / 180;
+                const R = 6371; // Earth radius in km
+                const dLat = toRad(lat2 - lat1);
+                const dLng = toRad(lng2 - lng1);
+                const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            }
+
+            function findFurthestTown(userLat, userLng) {
+                let maxDist = 0, furthest = null;
+                for (const town of worldTowns) {
+                    const dist = haversine(userLat, userLng, town.lat, town.lng);
+                    if (dist > maxDist) { maxDist = dist; furthest = town; }
+                }
+                return { ...furthest, distance: maxDist };
+            }
+
+            function showMapWithUserAndFurthest(userLat, userLng) {
+                const furthest = findFurthestTown(userLat, userLng);
+                const map = L.map('map').setView([userLat, userLng], 2);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+                const userMarker = L.marker([userLat, userLng]).addTo(map);
+                userMarker.bindPopup('you are here'.toLowerCase()).openPopup();
+                const furthestMarker = L.marker([furthest.lat, furthest.lng]).addTo(map);
+                furthestMarker.bindPopup(`${furthest.name}, ${furthest.country}<br>${furthest.distance.toFixed(0)} km away`.toLowerCase());
+                document.getElementById('furthest-town-info').textContent = `furthest town: ${furthest.name}, ${furthest.country} (${furthest.distance.toFixed(0)} km away)`.toLowerCase();
+            }
+
+            function getAndShowUserLocation() {
+                if ('geolocation' in navigator) {
+                    navigator.geolocation.getCurrentPosition(
+                        p => {
+                            const lat = p.coords.latitude;
+                            const lng = p.coords.longitude;
+                            if (window.L) { showMapWithUserAndFurthest(lat, lng); }
+                            else { leafletJs.onload = () => showMapWithUserAndFurthest(lat, lng); }
+                        },
+                        () => {
+                            document.getElementById('furthest-town-info').textContent = 'location permission denied.'.toLowerCase();
+                        }
+                    );
+                } else {
+                    document.getElementById('furthest-town-info').textContent = 'geolocation not available.'.toLowerCase();
+                }
+            }
+
+            // Call after dashboard loads
+            setTimeout(getAndShowUserLocation, 500);
+                let i = 0;
+                const el = document.getElementById(id);
+                el.innerHTML = "";
+                function type() { if (i < text.length) { el.innerHTML += text.charAt(i++); setTimeout(type, speed); } }
+                type();
+            };
+
+            enterButton.addEventListener('click', checkPassword);
+            passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') checkPassword(); });
+            
+            setInterval(animatePenguin, 750);
+            animatePenguin(); // Initial call to set the first frame
+
+            const themeCheckbox = document.getElementById('theme-checkbox');
+themeCheckbox.addEventListener('change', () => {
+    if (themeCheckbox.checked) {
+        document.body.classList.add('frutiger-aero-theme');
+    } else {
+        document.body.classList.remove('frutiger-aero-theme');
+    }
+});
+
+// Optionally, remember theme across reloads:
+if (localStorage.getItem('theme') === 'frutiger-aero') {
+    themeCheckbox.checked = true;
+    document.body.classList.add('frutiger-aero-theme');
+}
+themeCheckbox.addEventListener('change', () => {
+    localStorage.setItem('theme', themeCheckbox.checked ? 'frutiger-aero' : 'archaic');
+});
+        });
+    </script>
+</body>
+</html>
