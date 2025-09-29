@@ -90,6 +90,10 @@
 </footer>
     </main>
 
+    <!-- Security Configuration -->
+    <script src="config.js"></script>
+    <script src="security.js"></script>
+    
     <script>
     // Leaflet.js CDN
     const leafletCss = document.createElement('link');
@@ -101,9 +105,12 @@
     document.head.appendChild(leafletJs);
 
     document.addEventListener('DOMContentLoaded', () => {
-            const PASSWORD = "helloworld";
-            const BIRTH_DATE = new Date('2000-07-22T12:00:00');
-            const ESTIMATED_DEATH_AGE = 79.7;
+            // Get configuration from secure config (obfuscated)
+            const PASSWORD = window._AppConfig ? window._AppConfig.getAuth() : 'default';
+            const BIRTH_DATE = window._AppConfig ? window._AppConfig.getBirthData() : new Date();
+            const ESTIMATED_DEATH_AGE = window._AppConfig ? window._AppConfig.getLifespan() : 79.7;
+            
+            // Fallback data in case config fails to load
             const COUNTRIES_DATA = `albania\nargentina\narmenia\naustria\nazerbaijan\nbahamas\nbelgium\nbolivia\nbosnia and herzegovina\nbrazil\nbrunei\nbulgaria\ncambodia\ncanada\nchile\nchina\ncolombia\ncroatia\ncuba\ncyprus\nczech republic\ndenmark\necuador\negypt\nestonia\nfinland\nfrance\ngeorgia\ngermany\ngreece\nguatemala\nhungary\niceland\nindia\nireland\nisrael\nitaly\njapan\nkazakhstan\nkosovo\nkuwait\nkyrgyzstan\nlatvia\nlithuania\nluxembourg\nmalaysia\nmalta\nmexico\nmoldova\nmonaco\nmontenegro\nmorocco\nnetherlands\nnicaragua\nnorth macedonia\nnorway\npakistan\nparaguay\nperu\npoland\nportugal\nromania\nrussia\nsaudi arabia\nserbia\nslovakia\nslovenia\nsouth africa\nsouth korea\nspain\nsweden\nswitzerland\ntaiwan\nthailand\ntunisia\nturkey\nunited arab emirates\nunited kingdom\nunited states\nuzbekistan\nvatican city\nvietnam`;
             const BOOKS_DATA = `lolita - nabokov`;
 
