@@ -13,13 +13,13 @@
         // SECURE CONFIGURATION & DATA
         // ======================================================================
         // Get configuration from secure config (obfuscated)
-        const PASSWORD = window._AppConfig ? window._AppConfig.getAuth() : 'default';
-        const BIRTH_DATE = window._AppConfig ? window._AppConfig.getBirthData() : new Date();
+        const appToken = window._AppConfig ? window._AppConfig.init() : null;
+        const PASSWORD = window._AppConfig ? window._AppConfig.getAuth(appToken) : 'default';
+        const BIRTH_DATE = window._AppConfig ? window._AppConfig.getBirthData(appToken) : new Date();
         const ESTIMATED_DEATH_AGE = window._AppConfig ? window._AppConfig.getLifespan() : 79.7;
         
-        // Fallback data in case config fails to load
-        const COUNTRIES_DATA = `albania\nargentina\narmenia\naustria\nazerbaijan\nbahamas\nbelgium\nbolivia\nbosnia and herzegovina\nbrazil\nbrunei\nbulgaria\ncambodia\ncanada\nchile\nchina\ncolombia\ncroatia\ncuba\ncyprus\nczech republic\ndenmark\necuador\negypt\nestonia\nfinland\nfrance\ngeorgia\ngermany\ngreece\nguatemala\nhungary\niceland\nindia\nireland\nisrael\nitaly\njapan\nkazakhstan\nkosovo\nkuwait\nkyrgyzstan\nlatvia\nlithuania\nluxembourg\nmalaysia\nmalta\nmexico\nmoldova\nmonaco\nmontenegro\nmorocco\nnetherlands\nnicaragua\nnorth macedonia\nnorway\npakistan\nparaguay\nperu\npoland\nportugal\nromania\nrussia\nsaudi arabia\nserbia\nslovakia\nslovenia\nsouth africa\nsouth korea\nspain\nsweden\nswitzerland\ntaiwan\nthailand\ntunisia\nturkey\nunited arab emirates\nunited kingdom\nunited states\nuzbekistan\nvatican city\nvietnam`;
-        const BOOKS_DATA = `lolita - nabokov`;
+        // Sensitive data is now loaded securely after authentication
+        // No hardcoded data here - data comes from secure module
 
         // Penguin ASCII Art
         const penguinFrame1 = '   .--.\n  |o_o |\n  |:_/ |\n //   \\ \\\n(|     | )\n/\'\\_   _/`\\\n\\___)=(___/';
@@ -86,13 +86,19 @@
         
         const checkPassword = () => {
             if (passwordInput.value === PASSWORD) {
-                passwordContainer.classList.add('fade-out');
-                setTimeout(() => {
-                    passwordContainer.style.display = 'none';
-                    mainContent.classList.remove('hidden');
-                    mainContent.classList.add('fade-in');
-                    initializeDashboard();
-                }, 500);
+                // Authenticate with secure data module
+                if (window._SecureData && window._SecureData.authenticate('authenticated_user_verified')) {
+                    passwordContainer.classList.add('fade-out');
+                    setTimeout(() => {
+                        passwordContainer.style.display = 'none';
+                        mainContent.classList.remove('hidden');
+                        mainContent.classList.add('fade-in');
+                        initializeDashboard();
+                    }, 500);
+                } else {
+                    console.error('Security module authentication failed');
+                    showAuthError();
+                }
             } else {
                 passwordError.classList.add('visible');
                 passwordInput.classList.add('error');
@@ -102,6 +108,15 @@
                 }, 1000);
                 passwordInput.value = "";
             }
+        };
+        
+        const showAuthError = () => {
+            passwordError.textContent = 'security error';
+            passwordError.classList.add('visible');
+            setTimeout(() => {
+                passwordError.classList.remove('visible');
+                passwordError.textContent = 'sorry mate';
+            }, 2000);
         };
 
         const initializeDashboard = () => {
@@ -115,11 +130,29 @@
         };
 
         const loadLocalData = () => {
-            const countries = COUNTRIES_DATA.trim().split('\n').filter(Boolean);
-            document.getElementById('countries-count').textContent = countries.length;
-            document.getElementById('countries-list').innerHTML = countries.map(c => `<li>${c}</li>`).join('');
-            const books = BOOKS_DATA.trim().split('\n').filter(Boolean);
-            document.getElementById('current-book').textContent = books[0] || "N/A";
+            // Get data from secure module only after authentication
+            if (window._SecureData && window._SecureData.isAuthenticated()) {
+                const secureData = window._SecureData.getData();
+                
+                if (secureData.error) {
+                    document.getElementById('countries-count').textContent = '0';
+                    document.getElementById('countries-list').innerHTML = '<li>Data not available</li>';
+                    document.getElementById('current-book').textContent = 'Access denied';
+                    return;
+                }
+                
+                const countries = secureData.countries || [];
+                document.getElementById('countries-count').textContent = countries.length;
+                document.getElementById('countries-list').innerHTML = countries.map(c => `<li>${c}</li>`).join('');
+                
+                const books = secureData.books || [];
+                document.getElementById('current-book').textContent = books[0] || "N/A";
+            } else {
+                // Show placeholder data if not authenticated
+                document.getElementById('countries-count').textContent = '0';
+                document.getElementById('countries-list').innerHTML = '<li>Authentication required</li>';
+                document.getElementById('current-book').textContent = 'Authentication required';
+            }
         };
 
         const getGeolocation = () => {
