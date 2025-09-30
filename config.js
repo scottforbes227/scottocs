@@ -31,15 +31,61 @@
         checksum: 'verified'
     };
     
-    // Create secure accessor with validation
+    // Authentication token for legitimate calls
+    let authToken = null;
+    
+    // Generate auth token for legitimate application use
+    function generateAuthToken() {
+        authToken = 'app_' + Math.random().toString(36).substr(2, 9);
+        return authToken;
+    }
+    
+    // Validate that calls are coming from legitimate application code
+    function validateLegitimateCall(providedToken) {
+        return providedToken === authToken;
+    }
+    
+    // Create secure accessor with validation and additional obfuscation
     window._AppConfig = {
-        getAuth: function() {
+        // Initialize auth token
+        init: function() {
+            return generateAuthToken();
+        },
+        
+        getAuth: function(token) {
             // Add some basic validation to make it harder to bypass
             if (typeof document === 'undefined' || !document.body) return 'invalid';
+            
+            // Check for legitimate application calls
+            if (!validateLegitimateCall(token)) {
+                // Additional obfuscation - return dummy data if called from console/inspection
+                try {
+                    const stack = new Error().stack;
+                    if (stack && (stack.includes('eval') || stack.includes('console'))) {
+                        return 'inspection_detected';
+                    }
+                } catch (e) {
+                    // If stack trace fails, assume inspection
+                    return 'access_denied';
+                }
+                return 'token_required';
+            }
+            
             return secureData.auth;
         },
         
-        getBirthData: function() {
+        getBirthData: function(token) {
+            if (!validateLegitimateCall(token)) {
+                try {
+                    const stack = new Error().stack;
+                    if (stack && (stack.includes('eval') || stack.includes('console'))) {
+                        return new Date(); // Return dummy date if accessed from inspector
+                    }
+                } catch (e) {
+                    return new Date();
+                }
+                return new Date();
+            }
             return new Date(secureData.birth);
         },
         
@@ -51,6 +97,11 @@
         validateSession: () => secureData.token1,
         getChecksum: () => secureData.checksum,
         refreshToken: () => Math.random().toString(36),
+        
+        // Additional decoy functions
+        getSystemTime: () => Date.now(),
+        validateUser: () => 'authorized',
+        getSessionData: () => ({ status: 'active', token: Math.random().toString(36) }),
         
         // Self-destruct if tampering detected
         _destroy: function() {

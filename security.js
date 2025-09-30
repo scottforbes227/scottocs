@@ -47,6 +47,13 @@
             window._AppConfig.getLocationData = () => ['access_denied'];
         }
         
+        // Clear secure data module
+        if (window._SecureData) {
+            window._SecureData.authenticate = () => false;
+            window._SecureData.getData = () => ({ error: 'Developer tools detected - access denied' });
+            window._SecureData.isAuthenticated = () => false;
+        }
+        
         showSecurityWarning();
     }
     
@@ -98,6 +105,18 @@
             delete window.BIRTH_DATE;
             delete window.COUNTRIES_DATA;
             delete window.BOOKS_DATA;
+            
+            // Clear any remaining data references
+            if (window._SecureData) {
+                // Add additional protection to secure data
+                const originalGetData = window._SecureData.getData;
+                window._SecureData.getData = function() {
+                    if (!window._SecureData.isAuthenticated()) {
+                        return { error: 'Access denied - not authenticated' };
+                    }
+                    return originalGetData.call(this);
+                };
+            }
         }, 1000);
     });
     
