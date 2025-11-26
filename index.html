@@ -188,7 +188,7 @@
                     document.getElementById('countries-list').innerHTML = countries.map(c => `<li>${c}</li>`).join('');
                     
                     const books = secureData.books || [];
-                    document.getElementById('current-book').textContent = books[0] || "N/A";
+                    document.getElementById('current-book').textContent = books.length > 0 ? books.join(', ') : "N/A";
                 } else {
                     // Show placeholder data if not authenticated
                     document.getElementById('countries-count').textContent = '0';
