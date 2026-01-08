@@ -56,6 +56,7 @@ The fixed workflow file has been created in this PR with the correct syntax. Onc
 - The workflow uses `SamKirkland/FTP-Deploy-Action@4.3.0` for FTP deployment
 - It runs on every push to the `main` branch
 - It will only attempt to build if a `package.json` file exists (Node.js project)
+- For this repository (static site with no package.json), the build step is automatically skipped
 - The workflow uses FTPS (FTP over TLS) for secure file transfer
 
 ## Configuration Recommendations
@@ -63,3 +64,4 @@ The fixed workflow file has been created in this PR with the correct syntax. Onc
 - Files are uploaded to `/public_html/` which is the standard Namecheap public directory
 - Uses standard FTPS port `21` for secure file transfer
 - If your Namecheap configuration differs (e.g., different server directory), modify the hardcoded values in the workflow file
+- For Node.js projects with package.json: ensure a `build` script exists in package.json, or modify the workflow to use a different build command
