@@ -88,6 +88,7 @@ THREE.CSS2DRenderer = function () {
         viewProjectionMatrix.multiplyMatrices(camera.projectionMatrix, viewMatrix);
         renderObject(scene, scene, camera);
     };
+};
     
     return true;
 }
