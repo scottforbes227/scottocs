@@ -130,10 +130,9 @@ class InfiniteCanvas {
 
     setupScene() {
         this.scene = new THREE.Scene();
-        this.scene.background = new THREE.Color(0x000000);
+        this.scene.background = new THREE.Color(0xfcfcfc); // Cream background
         
-        // Add subtle fog for depth
-        this.scene.fog = new THREE.Fog(0x000000, 50, 300);
+        // No fog - keep it clean and crisp
     }
 
     setupCamera() {
@@ -163,10 +162,10 @@ class InfiniteCanvas {
     }
 
     setupLights() {
-        const ambientLight = new THREE.AmbientLight(0x404040, 2);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
         this.scene.add(ambientLight);
 
-        const pointLight = new THREE.PointLight(0x00ffff, 1, 200);
+        const pointLight = new THREE.PointLight(0xffffff, 0.5, 200);
         pointLight.position.set(0, 0, 100);
         this.scene.add(pointLight);
     }
@@ -199,28 +198,15 @@ class InfiniteCanvas {
     }
 
     createNode(id, position, htmlContent) {
-        // Create a glowing sphere marker
-        const geometry = new THREE.SphereGeometry(2, 32, 32);
-        const material = new THREE.MeshBasicMaterial({ 
-            color: 0x00ffff,
-            transparent: true,
-            opacity: 0.8
+        // Create a simple circle outline (ring geometry)
+        const ringGeometry = new THREE.RingGeometry(2, 2.2, 32);
+        const ringMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x1a1a1a, // Dark ink color
+            side: THREE.DoubleSide
         });
-        const sphere = new THREE.Mesh(geometry, material);
-        sphere.position.set(position.x, position.y, position.z);
-        this.scene.add(sphere);
-
-        // Add glow effect
-        const glowGeometry = new THREE.SphereGeometry(3, 32, 32);
-        const glowMaterial = new THREE.MeshBasicMaterial({
-            color: 0x00ffff,
-            transparent: true,
-            opacity: 0.3,
-            side: THREE.BackSide
-        });
-        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
-        glow.position.set(position.x, position.y, position.z);
-        this.scene.add(glow);
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        ring.position.set(position.x, position.y, position.z);
+        this.scene.add(ring);
 
         // Create CSS2D HTML content
         const div = document.createElement('div');
@@ -232,30 +218,17 @@ class InfiniteCanvas {
         label.position.set(position.x, position.y, position.z);
         this.scene.add(label);
 
-        this.nodes.push({ id, sphere, glow, label, position });
+        this.nodes.push({ id, ring, label, position });
 
-        // Animate glow
-        this.animateGlow(glow);
-    }
-
-    animateGlow(mesh) {
-        gsap.to(mesh.scale, {
-            x: 1.2,
-            y: 1.2,
-            z: 1.2,
-            duration: 2,
-            repeat: -1,
-            yoyo: true,
-            ease: "sine.inOut"
-        });
+        // No animation - keep it static and clean
     }
 
     createConnectingLines() {
         const center = this.nodePositions.center;
         const lineMaterial = new THREE.LineBasicMaterial({ 
-            color: 0x00ffff,
-            transparent: true,
-            opacity: 0.6
+            color: 0x999999, // Dark grey
+            transparent: false,
+            linewidth: 1 // Note: linewidth doesn't work in WebGL, but set for intent
         });
 
         // Create lines from center to each outer node
@@ -338,24 +311,21 @@ class InfiniteCanvas {
         const position = this.nodePositions[nodeId];
         if (!position) return;
 
-        // Animate camera to node position
+        // Animate camera to node position with snappy expo.out easing
         gsap.to(this.camera.position, {
             x: position.x,
             y: position.y,
             z: 150,
-            duration: 1.5,
-            ease: "power2.inOut"
+            duration: 0.8,
+            ease: "expo.out"
         });
     }
 
     animate() {
         requestAnimationFrame(this.animate.bind(this));
         
-        // Rotate lines slightly for effect
-        this.lines.forEach((line, index) => {
-            line.material.opacity = 0.4 + Math.sin(Date.now() * 0.001 + index) * 0.2;
-        });
-
+        // No animations - keep lines static
+        
         this.renderer.render(this.scene, this.camera);
         this.cssRenderer.render(this.scene, this.camera);
     }
@@ -391,7 +361,7 @@ function initCanvas() {
     if (typeof THREE === 'undefined') {
         console.error('THREE.js is not loaded. Please check your internet connection.');
         document.getElementById('canvas-container').innerHTML = 
-            '<div style="color: #00ffff; text-align: center; padding: 50px; font-size: 1.5rem;">' +
+            '<div style="color: #1a1a1a; text-align: center; padding: 50px; font-family: Inter, sans-serif; font-size: 1rem;">' +
             'Error: Unable to load 3D graphics library.<br>' +
             'Please check your internet connection and refresh the page.' +
             '</div>';
@@ -401,7 +371,7 @@ function initCanvas() {
     if (typeof gsap === 'undefined') {
         console.error('GSAP is not loaded. Please check your internet connection.');
         document.getElementById('canvas-container').innerHTML = 
-            '<div style="color: #00ffff; text-align: center; padding: 50px; font-size: 1.5rem;">' +
+            '<div style="color: #1a1a1a; text-align: center; padding: 50px; font-family: Inter, sans-serif; font-size: 1rem;">' +
             'Error: Unable to load animation library.<br>' +
             'Please check your internet connection and refresh the page.' +
             '</div>';
