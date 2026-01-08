@@ -33,9 +33,15 @@ For the deployment to work, the following secrets must be configured in the repo
 1. **NAMECHEAP_FTP_HOST** - The FTP server hostname for Namecheap
 2. **NAMECHEAP_FTP_USERNAME** - FTP username
 3. **NAMECHEAP_FTP_PASSWORD** - FTP password
-4. **PUBLISH_DIR** - Local directory to deploy (e.g., `./` or `./dist/`)
-5. **SERVER_DIR** - Remote directory on Namecheap server (e.g., `/public_html/`)
-6. **FTP_PORT** - FTP port number (typically `21` for FTPS)
+
+## Configuration Details
+The workflow uses the following hardcoded configuration values:
+- **local-dir**: `./` (deploys from repository root)
+- **server-dir**: `/public_html/` (standard Namecheap public directory)
+- **port**: `21` (standard FTPS port)
+- **protocol**: `ftps` (FTP over TLS for secure transfer)
+
+These values can be modified in the workflow file if your Namecheap setup differs.
 
 ## Corrected Workflow
 The fixed workflow file has been created in this PR with the correct syntax. Once merged, the deployment should work correctly, assuming all required secrets are configured.
@@ -53,7 +59,7 @@ The fixed workflow file has been created in this PR with the correct syntax. Onc
 - The workflow uses FTPS (FTP over TLS) for secure file transfer
 
 ## Configuration Recommendations
-- **PUBLISH_DIR**: For this static site, should typically be `./` (root directory) since there's no build step
-- **SERVER_DIR**: Should be the path on Namecheap where files should be uploaded (e.g., `/public_html/` or `/`)
-- **FTP_PORT**: Standard FTPS port is typically `21`
-- Note: Using secrets for directory paths (PUBLISH_DIR, SERVER_DIR) is non-standard but acceptable if flexibility is needed
+- The workflow deploys from the repository root (`./`) which is appropriate for this static site
+- Files are uploaded to `/public_html/` which is the standard Namecheap public directory
+- Uses standard FTPS port `21` for secure file transfer
+- If your Namecheap configuration differs (e.g., different server directory), modify the hardcoded values in the workflow file
