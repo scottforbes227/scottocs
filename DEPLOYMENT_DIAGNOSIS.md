@@ -51,3 +51,9 @@ The fixed workflow file has been created in this PR with the correct syntax. Onc
 - It runs on every push to the `main` branch
 - It will only attempt to build if a `package.json` file exists (Node.js project)
 - The workflow uses FTPS (FTP over TLS) for secure file transfer
+
+## Configuration Recommendations
+- **PUBLISH_DIR**: For this static site, should typically be `./` (root directory) since there's no build step
+- **SERVER_DIR**: Should be the path on Namecheap where files should be uploaded (e.g., `/public_html/` or `/`)
+- **FTP_PORT**: Standard FTPS port is typically `21`
+- Note: Using secrets for directory paths (PUBLISH_DIR, SERVER_DIR) is non-standard but acceptable if flexibility is needed
