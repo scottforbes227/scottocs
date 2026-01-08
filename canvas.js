@@ -1,6 +1,13 @@
 // Infinite Canvas UI Implementation
 // Using Three.js and GSAP for smooth animations
 
+// Wait for THREE.js to load
+function initCSS2DRenderer() {
+    if (typeof THREE === 'undefined') {
+        console.error('THREE.js not loaded');
+        return false;
+    }
+
 // CSS2DRenderer implementation (inline since CDN path may vary)
 THREE.CSS2DObject = function (element) {
     THREE.Object3D.call(this);
@@ -81,7 +88,9 @@ THREE.CSS2DRenderer = function () {
         viewProjectionMatrix.multiplyMatrices(camera.projectionMatrix, viewMatrix);
         renderObject(scene, scene, camera);
     };
-};
+    
+    return true;
+}
 
 class InfiniteCanvas {
     constructor() {
@@ -377,6 +386,33 @@ class InfiniteCanvas {
 let canvas = null;
 
 function initCanvas() {
+    // Check if dependencies are loaded
+    if (typeof THREE === 'undefined') {
+        console.error('THREE.js is not loaded. Please check your internet connection.');
+        document.getElementById('canvas-container').innerHTML = 
+            '<div style="color: #00ffff; text-align: center; padding: 50px; font-size: 1.5rem;">' +
+            'Error: Unable to load 3D graphics library.<br>' +
+            'Please check your internet connection and refresh the page.' +
+            '</div>';
+        return;
+    }
+    
+    if (typeof gsap === 'undefined') {
+        console.error('GSAP is not loaded. Please check your internet connection.');
+        document.getElementById('canvas-container').innerHTML = 
+            '<div style="color: #00ffff; text-align: center; padding: 50px; font-size: 1.5rem;">' +
+            'Error: Unable to load animation library.<br>' +
+            'Please check your internet connection and refresh the page.' +
+            '</div>';
+        return;
+    }
+    
+    // Initialize CSS2DRenderer
+    if (!initCSS2DRenderer()) {
+        console.error('Failed to initialize CSS2DRenderer');
+        return;
+    }
+    
     canvas = new InfiniteCanvas();
     canvas.init();
     canvas.loadAboutContent();
