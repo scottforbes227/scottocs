@@ -419,19 +419,25 @@
         const renderAdminTags = (containerId, items, category) => {
             const container = document.getElementById(containerId);
             if (!container) return;
-            container.innerHTML = items.map((item, idx) =>
-                `<span class="admin-tag">
-                    ${item}
-                    <button class="remove-tag" data-cat="${category}" data-idx="${idx}" title="remove">×</button>
-                </span>`
-            ).join('');
-            container.querySelectorAll('.remove-tag').forEach(btn => {
+            container.innerHTML = '';
+            items.forEach((item, idx) => {
+                const span = document.createElement('span');
+                span.className = 'admin-tag';
+                const text = document.createTextNode(item + ' ');
+                span.appendChild(text);
+                const btn = document.createElement('button');
+                btn.className = 'remove-tag';
+                btn.dataset.cat = category;
+                btn.dataset.idx = String(idx);
+                btn.title = 'remove';
+                btn.textContent = '×';
                 btn.addEventListener('click', () => {
-                    const cat = btn.dataset.cat;
                     const i = parseInt(btn.dataset.idx, 10);
-                    adminData[cat].splice(i, 1);
-                    renderAdminTags(containerId, adminData[cat], cat);
+                    adminData[category].splice(i, 1);
+                    renderAdminTags(containerId, adminData[category], category);
                 });
+                span.appendChild(btn);
+                container.appendChild(span);
             });
         };
 

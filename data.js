@@ -66,17 +66,19 @@
         if (!isAuthenticated) return { error: 'Authentication required' };
         lastAccess = Date.now();
 
-        // Merge into existing cache/defaults
-        const current = getSecureData();
-        const merged = {
-            countries: newData.countries !== undefined ? newData.countries : (current.countries || []),
-            currentBooks: newData.currentBooks !== undefined ? newData.currentBooks : (current.currentBooks || []),
-            booksRead: newData.booksRead !== undefined ? newData.booksRead : (current.booksRead || []),
+        const getOrDefault = (field) =>
+            newData[field] !== undefined ? newData[field] : ((dataCache && dataCache[field]) || []);
+
+        // Merge new values with existing cache
+        const updated = {
+            countries: getOrDefault('countries'),
+            currentBooks: getOrDefault('currentBooks'),
+            booksRead: getOrDefault('booksRead'),
         };
 
         // Update cache
-        dataCache = merged;
-        return saveToStorage(merged) ? { success: true } : { error: 'Storage unavailable' };
+        dataCache = updated;
+        return saveToStorage(updated) ? { success: true } : { error: 'Storage unavailable' };
     }
     
     // Get data only if authenticated - with auto-clear after use
