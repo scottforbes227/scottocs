@@ -1,5 +1,4 @@
-<script>
-    // Leaflet.js CDN - Load mapping library
+// Leaflet.js CDN - Load mapping library
     const leafletCss = document.createElement('link');
     leafletCss.rel = 'stylesheet';
     leafletCss.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
@@ -246,4 +245,3 @@
         setInterval(animatePenguin, 750);
         animatePenguin(); // Initial call
     });
-</script>

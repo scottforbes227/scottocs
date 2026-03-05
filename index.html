@@ -3,337 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scott Forbes - Infinite Canvas</title>
+    <title>scott</title>
     
-    <!-- Three.js -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-    
-    <!-- GSAP -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
     
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg-main: #f6f6ef; --bg-page: #ffffff; --text-main: #222222; --text-muted: #888888;
+            --border-color: #cccccc; --accent-color: #0000ee; --button-bg: #e0e0e0;
+            --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: 'Courier New', Courier, monospace;
         }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #fcfcfc;
-            color: #1a1a1a;
-            overflow: hidden;
-        }
-
-        /* Password Gate Styles */
-        #password-gate {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #fcfcfc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            transition: opacity 0.4s ease-out;
-        }
-
-        #password-gate.fade-out {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .password-content {
-            text-align: center;
-            max-width: 360px;
-            padding: 2rem;
-        }
-
-        .password-content h1 {
-            font-family: 'Lora', Georgia, serif;
-            font-size: 2.25rem;
-            font-weight: 600;
-            color: #1a1a1a;
-            margin-bottom: 2rem;
-            letter-spacing: -0.02em;
-        }
-
-        #password-input {
-            width: 100%;
-            padding: 0.875rem 1rem;
-            font-size: 1rem;
-            font-family: 'Inter', sans-serif;
-            background: #ffffff;
-            border: 1px solid #d4d4d4;
-            border-radius: 4px;
-            color: #1a1a1a;
-            text-align: center;
-            margin-bottom: 1rem;
-            outline: none;
-            transition: all 0.2s ease;
-        }
-
-        #password-input:focus {
-            border-color: #2962ff;
-            box-shadow: 0 0 0 3px rgba(41, 98, 255, 0.1);
-        }
-
-        #password-input.error {
-            border-color: #eb5757;
-            box-shadow: 0 0 0 3px rgba(235, 87, 87, 0.1);
-        }
-
-        #enter-button {
-            width: 100%;
-            padding: 0.875rem 1rem;
-            font-size: 1rem;
-            font-family: 'Inter', sans-serif;
-            font-weight: 500;
-            background: #1a1a1a;
-            border: none;
-            border-radius: 4px;
-            color: #ffffff;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        #enter-button:hover {
-            background: #2962ff;
-        }
-
-        #enter-button:active {
-            transform: scale(0.98);
-        }
-
-        #password-error {
-            color: #eb5757;
-            font-size: 0.875rem;
-            margin-top: 1rem;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-
-        #password-error.visible {
-            opacity: 1;
-        }
-
-        /* Canvas Container */
-        #canvas-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none;
-        }
-
-        #canvas-container.active {
-            display: block;
-        }
-
-        /* Navigation Menu */
-        #nav-menu {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            z-index: 100;
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid #e5e5e5;
-            border-radius: 8px;
-            padding: 0.5rem;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        }
-
-        .nav-item {
-            padding: 0.625rem 1rem;
-            margin: 0.25rem 0;
-            background: transparent;
-            border: none;
-            border-radius: 4px;
-            color: #1a1a1a;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            text-align: left;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-
-        .nav-item:hover {
-            background: #f5f5f5;
-            color: #2962ff;
-        }
-
-        .nav-item:active {
-            transform: scale(0.98);
-        }
-
-        /* Canvas Node Styles */
-        .canvas-node {
-            background: rgba(255, 255, 255, 0.98);
-            border: 1px solid #e5e5e5;
-            border-radius: 8px;
-            padding: 2rem;
-            min-width: 320px;
-            max-width: 480px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-            pointer-events: auto;
-        }
-
-        .node-title {
-            font-family: 'Lora', Georgia, serif;
-            font-size: 2rem;
-            font-weight: 600;
-            color: #1a1a1a;
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.02em;
-            line-height: 1.2;
-        }
-
-        .node-subtitle {
-            font-family: 'Inter', sans-serif;
-            font-size: 1rem;
-            font-weight: 400;
-            color: #666666;
-            margin-bottom: 1.5rem;
-            line-height: 1.5;
-        }
-
-        .node-content {
-            font-family: 'Inter', sans-serif;
-            color: #1a1a1a;
-            line-height: 1.6;
-            font-size: 0.9375rem;
-        }
-
-        .node-content h3 {
-            font-family: 'Lora', Georgia, serif;
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: #1a1a1a;
-            margin-top: 1.5rem;
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.01em;
-        }
-
-        .fact-section {
-            margin: 1rem 0;
-            padding: 1rem;
-            background: #f9f9f9;
-            border-left: 2px solid #2962ff;
-            border-radius: 4px;
-        }
-
-        .countries-list {
-            color: #666666;
-            font-size: 0.875rem;
-            line-height: 1.7;
-        }
-
-        /* Loading indicator */
-        .loading {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #1a1a1a;
-            font-family: 'Inter', sans-serif;
-            font-size: 1rem;
+        *, *::before, *::after { box-sizing: border-box; }
+        body { font-family: var(--font-body); background: var(--bg-page); color: var(--text-main); line-height: 1.5; margin: 0; padding: 1.5rem; }
+        h1, h2 { font-family: var(--font-mono); color: var(--accent-color); margin-top: 1em; margin-bottom: 0.5em; font-weight: normal; }
+        hr { border: 0; border-top: 1px solid var(--border-color); margin: 2rem 0; }
+        a { color: var(--accent-color); }
+        a:hover { text-decoration: none; }
+        ul { list-style-type: square; padding-left: 2rem; }
+        em { color: var(--text-muted); font-style: normal; }
+        pre { font-family: var(--font-mono); color: var(--text-muted); margin-bottom: 2rem; white-space: pre; text-align: center; }
+        #password-container, #main-content { background: var(--bg-main); border: 1px solid var(--border-color); padding: 2rem; margin: 4rem auto; }
+        #password-container { max-width: 350px; text-align: center; }
+        #main-content { max-width: 650px; text-align: left; }
+        input[type="password"] { font-family: var(--font-mono); font-size: 1rem; padding: 0.5rem; margin-bottom: 1rem; border: 1px solid #999; background: var(--bg-page); width: 100%; }
+        input[type="password"]:focus { outline: 1px solid var(--accent-color); border-color: var(--accent-color); }
+        button { font-size: 1rem; padding: 0.5rem 1rem; background: var(--button-bg); border: 1px solid #888; cursor: pointer; border-style: outset; border-color: #f0f0f0 #808080 #808080 #f0f0f0; }
+        button:hover { background: #e8e8e8; }
+        button:active { border-style: inset; background: #d6d6d6; }
+        .frutiger-aero-theme {
+            --bg-main: #e0f7fa;
+            --bg-page: #ffffff;
+            --text-main: #00695c;
+            --text-muted: #004d40;
+            --border-color: #b2dfdb;
+            --accent-color: #00796b;
+            --button-bg: #b2ebf2;
+            --font-body: 'Comic Sans MS', 'Papyrus', cursive, fantasy, sans-serif;
+            --font-mono: 'Comic Sans MS', 'Papyrus', cursive, fantasy, monospace;
+            font-size: 2.2em !important;
+            text-transform: capitalize !important;
+            background: url('aero.jpg') center center/cover no-repeat fixed !important;
         }
     </style>
 </head>
 <body>
 
-    <!-- Password Gate -->
-    <div id="password-gate">
-        <div class="password-content">
-            <h1>Enter</h1>
-            <input type="password" id="password-input" placeholder="Password" autofocus>
-            <button id="enter-button">Access</button>
-            <p id="password-error">Access Denied</p>
-        </div>
+    <div id="password-container">
+        <pre id="ascii-art"></pre>
+        <h2>password pls</h2>
+        <input type="password" id="password-input" autofocus>
+        <button id="enter-button">print</button>
+        <p id="password-error">sorry mate</p>
     </div>
 
-    <!-- Canvas Container -->
-    <div id="canvas-container"></div>
-
-    <!-- Navigation Menu -->
-    <div id="nav-menu" style="display: none;">
-        <div class="nav-item" data-target="center">Home</div>
-        <div class="nav-item" data-target="work">Work</div>
-        <div class="nav-item" data-target="about">About</div>
-        <div class="nav-item" data-target="writing">Writing</div>
-        <div class="nav-item" data-target="contact">Contact</div>
-    </div>
+    <main id="main-content" class="hidden">
+        <header><h1 id="main-title"></h1><p>boot time: <span id="boot-time"></span></p></header><hr>
+        <section>
+            <h2>welcome</h2>
+            <div id="geolocation"></div>
+            <div id="current-time"></div>
+            <div id="map" style="height: 300px; margin: 1em 0; border: 1px solid var(--border-color); border-radius: 8px;"></div>
+            <div id="furthest-town-info" style="margin-top: 1em; font-family: var(--font-mono);"></div>
+        </section><hr>
+        <section><h2>scott facts</h2><h3>countries visited (<span id="countries-count">0</span>/197)</h3><ul id="countries-list"></ul><h3>currently reading</h3><div id="current-book"></div></section><hr>
+        <section>
+            <h2>time</h2>
+            <div>age: <span id="current-age"></span></div>
+            <div>death age (ONS): <span id="death-age"></span></div>
+            <div id="percent-done" style="margin-top: 0.5rem; font-family: var(--font-mono);"></div>
+            <div id="percent-left" style="font-family: var(--font-mono);"></div>
+        </section><hr>
+        <footer>
+            <div class="theme-switch-wrapper">
+                <label class="theme-switch" for="theme-checkbox">
+                    <input type="checkbox" id="theme-checkbox" />
+                    <div class="slider round"></div>
+                </label>
+                <em>aero mode</em>
+            </div>
+            <p><em>(c) 2000 scott forbes</em></p>
+        </footer>
+    </main>
 
     <!-- Security Configuration -->
     <script src="config.js"></script>
     <script src="security.js"></script>
     <script src="data.js"></script>
-    <script src="canvas.js"></script>
-    
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // Get configuration from secure config
-        const appToken = window._AppConfig ? window._AppConfig.init() : null;
-        const PASSWORD = window._AppConfig ? window._AppConfig.getAuth(appToken) : 'default';
-        
-        const passwordGate = document.getElementById('password-gate');
-        const canvasContainer = document.getElementById('canvas-container');
-        const navMenu = document.getElementById('nav-menu');
-        const passwordInput = document.getElementById('password-input');
-        const enterButton = document.getElementById('enter-button');
-        const passwordError = document.getElementById('password-error');
-        
-        const checkPassword = () => {
-            if (passwordInput.value === PASSWORD) {
-                // Authenticate with secure data module
-                if (window._SecureData && window._SecureData.authenticate('authenticated_user_verified')) {
-                    // Fade out password gate
-                    passwordGate.classList.add('fade-out');
-                    
-                    setTimeout(() => {
-                        passwordGate.style.display = 'none';
-                        canvasContainer.classList.add('active');
-                        navMenu.style.display = 'block';
-                        
-                        // Initialize the canvas
-                        initCanvas();
-                    }, 500);
-                } else {
-                    console.error('Security module authentication failed');
-                    passwordError.textContent = 'Security Error';
-                    passwordError.classList.add('visible');
-                    setTimeout(() => {
-                        passwordError.classList.remove('visible');
-                        passwordError.textContent = 'Access Denied';
-                    }, 2000);
-                }
-            } else {
-                passwordError.classList.add('visible');
-                passwordInput.classList.add('error');
-                setTimeout(() => {
-                    passwordError.classList.remove('visible');
-                    passwordInput.classList.remove('error');
-                }, 1000);
-                passwordInput.value = "";
-            }
-        };
-        
-        enterButton.addEventListener('click', checkPassword);
-        passwordInput.addEventListener('keypress', (e) => { 
-            if (e.key === 'Enter') checkPassword(); 
-        });
-    });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
