@@ -81,25 +81,13 @@
         return saveToStorage(updated) ? { success: true } : { error: 'Storage unavailable' };
     }
     
-    // Get data only if authenticated - with auto-clear after use
+    // Get data only if authenticated
     function getSecureData() {
         accessCount++;
         
         // Security checks
         if (!isAuthenticated) {
             return { error: 'Authentication required' };
-        }
-        
-        if (accessCount > 50) { // Limit access attempts
-            isAuthenticated = false;
-            dataCache = null;
-            return { error: 'Too many access attempts' };
-        }
-        
-        if (Date.now() - lastAccess > 60000) { // 60 second timeout
-            isAuthenticated = false;
-            dataCache = null;
-            return { error: 'Session timeout' };
         }
 
         lastAccess = Date.now();
@@ -138,15 +126,6 @@
             booksRead: [...(dataCache.booksRead || [])]
         };
     }
-    
-    // Auto-clear data after period of inactivity
-    setInterval(() => {
-        if (isAuthenticated && Date.now() - lastAccess > 120000) { // 2 minutes
-            isAuthenticated = false;
-            dataCache = null;
-            accessCount = 0;
-        }
-    }, 30000);
     
     // Expose limited interface
     window._SecureData = {

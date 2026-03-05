@@ -322,6 +322,7 @@
             adminBtn.addEventListener('click', () => {
                 if (!window._SecureData || !window._SecureData.isAuthenticated()) return;
                 const data = window._SecureData.getData();
+                if (data.error) return;
                 adminData = {
                     countries: [...(data.countries || [])],
                     currentBooks: [...(data.currentBooks || [])],
