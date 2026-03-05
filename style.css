@@ -37,7 +37,39 @@ input.error {
 @keyframes fadeOut {
     from { opacity: 1; }
     to { opacity: 0; }
-}/* ============================================= */
+}
+
+/* ============================================= */
+/* === DARK THEME                            === */
+/* ============================================= */
+body.dark-theme {
+    background: #121212;
+}
+body.dark-theme #password-container,
+body.dark-theme #main-content {
+    background: #1e1e1e;
+    border-color: #333;
+}
+body.dark-theme input[type="password"] {
+    background: #2a2a2a;
+    border-color: #555;
+    color: #e0e0e0;
+}
+body.dark-theme button {
+    background: #2e2e2e;
+    border-color: #555 #222 #222 #555;
+    color: #e0e0e0;
+}
+body.dark-theme button:hover { background: #3a3a3a; }
+body.dark-theme .stat-card { background: #1a1a2e; border-color: #333355; }
+body.dark-theme .tag { background: #2a2a3a; color: #c0c0d0; border-color: #333; }
+body.dark-theme .book-item { border-color: #333; }
+body.dark-theme .admin-panel { background: #1e1e1e; border-color: #4fc3f7; }
+body.dark-theme .admin-add-row input { background: #2a2a2a; border-color: #555; color: #e0e0e0; }
+body.dark-theme .admin-tag { background: #2a2a3a; color: #c0c0d0; border-color: #444; }
+body.dark-theme .admin-save-btn { background: #4fc3f7; color: #121212; }
+
+/* ============================================= */
 /* === FRUTIGER AERO THEME & TOGGLE STYLES === */
 /* ============================================= */
 
@@ -141,10 +173,12 @@ body.frutiger-aero-theme {
 
 /* Animated bubbles */
 .frutiger-aero-theme .bubble {
-    position: absolute;
+    position: fixed;
     border-radius: 50%;
     background: radial-gradient(circle at 30% 30%, #aeefff 60%, #00eaff 100%);
     opacity: 0.7;
+    pointer-events: none;
+    z-index: 0;
     animation: bubbleUp 8s linear infinite;
 }
 @keyframes bubbleUp {
@@ -183,6 +217,7 @@ body.frutiger-aero-theme {
 .frutiger-aero-theme input[type="password"] {
     background: rgba(255, 255, 255, 0.7);
     text-align: center;
+    color: #0a3d62;
 }
 .frutiger-aero-theme input[type="password"]:focus {
     outline: none;
@@ -210,4 +245,18 @@ body.frutiger-aero-theme {
 .frutiger-aero-theme #map {
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.frutiger-aero-theme .stat-card {
+    background: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.7);
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+}
+
+.frutiger-aero-theme .admin-panel {
+    background: rgba(255,255,255,0.85);
+    border-radius: 16px;
+    border-color: #00796b;
+    backdrop-filter: blur(12px);
 }
