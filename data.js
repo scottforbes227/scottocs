@@ -7,6 +7,8 @@
     let dataCache = null;
     let accessCount = 0;
     let lastAccess = 0;
+
+    const LS_KEY = 'scott_user_data';
     
     // Heavily obfuscated data that gets decoded only after authentication
     const encryptedData = {
@@ -27,6 +29,26 @@
             return '';
         }
     }
+
+    // Load user-saved data from localStorage
+    function loadFromStorage() {
+        try {
+            const raw = localStorage.getItem(LS_KEY);
+            if (raw) return JSON.parse(raw);
+        } catch (e) { /* ignore */ }
+        return null;
+    }
+
+    // Save user data to localStorage
+    function saveToStorage(data) {
+        try {
+            data.lastUpdated = new Date().toISOString();
+            localStorage.setItem(LS_KEY, JSON.stringify(data));
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
     
     // Authenticate and unlock data
     function authenticate(token) {
@@ -38,6 +60,24 @@
         }
         return false;
     }
+
+    // Update user data (admin panel save)
+    function updateUserData(newData) {
+        if (!isAuthenticated) return { error: 'Authentication required' };
+        lastAccess = Date.now();
+
+        // Merge into existing cache/defaults
+        const current = getSecureData();
+        const merged = {
+            countries: newData.countries !== undefined ? newData.countries : (current.countries || []),
+            currentBooks: newData.currentBooks !== undefined ? newData.currentBooks : (current.currentBooks || []),
+            booksRead: newData.booksRead !== undefined ? newData.booksRead : (current.booksRead || []),
+        };
+
+        // Update cache
+        dataCache = merged;
+        return saveToStorage(merged) ? { success: true } : { error: 'Storage unavailable' };
+    }
     
     // Get data only if authenticated - with auto-clear after use
     function getSecureData() {
@@ -48,24 +88,39 @@
             return { error: 'Authentication required' };
         }
         
-        if (accessCount > 10) { // Limit access attempts
+        if (accessCount > 50) { // Limit access attempts
             isAuthenticated = false;
             dataCache = null;
             return { error: 'Too many access attempts' };
         }
         
-        if (Date.now() - lastAccess > 30000) { // 30 second timeout
+        if (Date.now() - lastAccess > 60000) { // 60 second timeout
             isAuthenticated = false;
             dataCache = null;
             return { error: 'Session timeout' };
         }
+
+        lastAccess = Date.now();
         
         if (!dataCache) {
-            // Decode data only when needed and authenticated
-            dataCache = {
-                countries: decode64(encryptedData.countries).split('\n').filter(Boolean),
-                books: decode64(encryptedData.books).split('\n').filter(Boolean)
-            };
+            // Check localStorage first (user-edited data takes priority)
+            const stored = loadFromStorage();
+            if (stored && stored.countries && stored.countries.length > 0) {
+                dataCache = {
+                    countries: stored.countries,
+                    currentBooks: stored.currentBooks || [],
+                    booksRead: stored.booksRead || []
+                };
+            } else {
+                // Fall back to built-in encoded data
+                const defaultCountries = decode64(encryptedData.countries).split('\n').map(s => s.trim()).filter(Boolean);
+                const defaultBooks = decode64(encryptedData.books).split('\n').map(s => s.trim()).filter(Boolean);
+                dataCache = {
+                    countries: defaultCountries,
+                    currentBooks: [defaultBooks[0]].filter(Boolean),
+                    booksRead: defaultBooks.slice(1).filter(Boolean)
+                };
+            }
             
             // Clear encoded data after decoding
             setTimeout(() => {
@@ -77,13 +132,14 @@
         // Return copy to prevent direct access to cached data
         return {
             countries: [...dataCache.countries],
-            books: [...dataCache.books]
+            currentBooks: [...(dataCache.currentBooks || [])],
+            booksRead: [...(dataCache.booksRead || [])]
         };
     }
     
     // Auto-clear data after period of inactivity
     setInterval(() => {
-        if (isAuthenticated && Date.now() - lastAccess > 60000) { // 1 minute
+        if (isAuthenticated && Date.now() - lastAccess > 120000) { // 2 minutes
             isAuthenticated = false;
             dataCache = null;
             accessCount = 0;
@@ -94,6 +150,7 @@
     window._SecureData = {
         authenticate: authenticate,
         getData: getSecureData,
+        updateData: updateUserData,
         isAuthenticated: () => isAuthenticated,
         
         // Decoy functions to confuse inspection

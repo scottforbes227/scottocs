@@ -13,10 +13,21 @@
             --border-color: #cccccc; --accent-color: #0000ee; --button-bg: #e0e0e0;
             --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             --font-mono: 'Courier New', Courier, monospace;
+            --stat-bar-bg: #e0e0e0; --stat-bar-fill: #0000ee;
+            --card-bg: #f0f0f0; --card-border: #dddddd;
+            --tag-bg: #e8e8e8; --tag-text: #333333;
+        }
+        body.dark-theme {
+            --bg-main: #1e1e1e; --bg-page: #121212; --text-main: #e0e0e0; --text-muted: #888888;
+            --border-color: #333333; --accent-color: #4fc3f7; --button-bg: #2e2e2e;
+            --stat-bar-bg: #333333; --stat-bar-fill: #4fc3f7;
+            --card-bg: #1a1a2e; --card-border: #333355;
+            --tag-bg: #2a2a3a; --tag-text: #c0c0d0;
         }
         *, *::before, *::after { box-sizing: border-box; }
-        body { font-family: var(--font-body); background: var(--bg-page); color: var(--text-main); line-height: 1.5; margin: 0; padding: 1.5rem; }
+        body { font-family: var(--font-body); background: var(--bg-page); color: var(--text-main); line-height: 1.5; margin: 0; padding: 1.5rem; transition: background 0.3s, color 0.3s; }
         h1, h2 { font-family: var(--font-mono); color: var(--accent-color); margin-top: 1em; margin-bottom: 0.5em; font-weight: normal; }
+        h3 { font-family: var(--font-mono); color: var(--text-muted); font-size: 0.9rem; margin: 1em 0 0.4em; font-weight: normal; letter-spacing: 0.04em; }
         hr { border: 0; border-top: 1px solid var(--border-color); margin: 2rem 0; }
         a { color: var(--accent-color); }
         a:hover { text-decoration: none; }
@@ -25,24 +36,93 @@
         pre { font-family: var(--font-mono); color: var(--text-muted); margin-bottom: 2rem; white-space: pre; text-align: center; }
         #password-container, #main-content { background: var(--bg-main); border: 1px solid var(--border-color); padding: 2rem; margin: 4rem auto; }
         #password-container { max-width: 350px; text-align: center; }
-        #main-content { max-width: 650px; text-align: left; }
-        input[type="password"] { font-family: var(--font-mono); font-size: 1rem; padding: 0.5rem; margin-bottom: 1rem; border: 1px solid #999; background: var(--bg-page); width: 100%; }
+        #main-content { max-width: 700px; text-align: left; }
+        input[type="password"] { font-family: var(--font-mono); font-size: 1rem; padding: 0.5rem; margin-bottom: 1rem; border: 1px solid #999; background: var(--bg-page); color: var(--text-main); width: 100%; }
         input[type="password"]:focus { outline: 1px solid var(--accent-color); border-color: var(--accent-color); }
-        button { font-size: 1rem; padding: 0.5rem 1rem; background: var(--button-bg); border: 1px solid #888; cursor: pointer; border-style: outset; border-color: #f0f0f0 #808080 #808080 #f0f0f0; }
+        button { font-size: 1rem; padding: 0.5rem 1rem; background: var(--button-bg); border: 1px solid #888; cursor: pointer; border-style: outset; border-color: #f0f0f0 #808080 #808080 #f0f0f0; color: var(--text-main); }
         button:hover { background: #e8e8e8; }
         button:active { border-style: inset; background: #d6d6d6; }
+
+        /* --- STAT BARS --- */
+        .stat-bar-wrap { margin: 0.5rem 0 1rem; }
+        .stat-bar-label { font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-muted); margin-bottom: 3px; }
+        .stat-bar { background: var(--stat-bar-bg); height: 10px; border-radius: 2px; overflow: hidden; }
+        .stat-bar-fill { background: var(--stat-bar-fill); height: 100%; border-radius: 2px; transition: width 1s ease; }
+
+        /* --- STATS GRID --- */
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin: 1rem 0; }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--card-border); padding: 0.75rem 1rem; border-radius: 3px; }
+        .stat-card .stat-num { font-family: var(--font-mono); font-size: 1.8rem; color: var(--accent-color); line-height: 1; }
+        .stat-card .stat-desc { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem; }
+
+        /* --- CONTINENT BREAKDOWN --- */
+        .continent-list { list-style: none; padding: 0; margin: 0.5rem 0 1rem; }
+        .continent-list li { display: flex; align-items: center; gap: 0.5rem; font-family: var(--font-mono); font-size: 0.82rem; margin-bottom: 4px; }
+        .continent-list .cb-name { width: 100px; color: var(--text-muted); }
+        .continent-list .cb-bar { flex: 1; background: var(--stat-bar-bg); height: 8px; border-radius: 2px; overflow: hidden; }
+        .continent-list .cb-fill { background: var(--stat-bar-fill); height: 100%; border-radius: 2px; }
+        .continent-list .cb-count { width: 40px; text-align: right; color: var(--text-main); }
+
+        /* --- TAGS (countries, books) --- */
+        .tag-list { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0; }
+        .tag { background: var(--tag-bg); color: var(--tag-text); font-family: var(--font-mono); font-size: 0.76rem; padding: 0.2rem 0.5rem; border-radius: 2px; border: 1px solid var(--border-color); }
+
+        /* --- BOOKS SECTION --- */
+        .book-item { font-family: var(--font-mono); font-size: 0.88rem; padding: 0.4rem 0; border-bottom: 1px solid var(--border-color); }
+        .book-item:last-child { border-bottom: none; }
+        .book-current { color: var(--accent-color); }
+        .book-read { color: var(--text-muted); }
+
+        /* --- COLLAPSIBLE SECTIONS --- */
+        .collapse-toggle { background: none; border: none; font-family: var(--font-mono); font-size: 0.9rem; color: var(--text-muted); cursor: pointer; padding: 0; margin: 0; border-style: none; }
+        .collapse-toggle:hover { color: var(--accent-color); background: none; }
+        .collapse-toggle::before { content: '▾ '; }
+        .collapse-toggle.collapsed::before { content: '▸ '; }
+        .collapsible-body { overflow: hidden; transition: max-height 0.3s ease; }
+        .collapsible-body.collapsed { max-height: 0 !important; }
+
+        /* --- FOOTER CONTROLS --- */
+        .footer-controls { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; margin-bottom: 1rem; }
+        .theme-switch-wrapper { display: flex; align-items: center; gap: 0.5rem; }
+        .theme-switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .theme-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background: linear-gradient(to bottom, #34c759, #299c46); }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .dark-switch input:checked + .slider { background: linear-gradient(to bottom, #4fc3f7, #0277bd); }
+
+        /* --- ADMIN BUTTON --- */
+        #admin-btn { font-family: var(--font-mono); font-size: 0.8rem; background: none; border: 1px solid var(--border-color); color: var(--text-muted); padding: 0.25rem 0.5rem; cursor: pointer; border-style: solid; }
+        #admin-btn:hover { color: var(--accent-color); border-color: var(--accent-color); background: none; }
+
+        /* --- ADMIN PANEL --- */
+        .admin-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+        .admin-overlay.hidden { display: none; }
+        .admin-panel { background: var(--bg-main); border: 2px solid var(--accent-color); padding: 1.5rem; width: 90%; max-width: 560px; max-height: 90vh; overflow-y: auto; border-radius: 4px; }
+        .admin-panel h2 { margin-top: 0; }
+        .admin-section { margin-bottom: 1.5rem; }
+        .admin-section h3 { color: var(--accent-color); margin-bottom: 0.5rem; }
+        .admin-tag-list { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-bottom: 0.5rem; min-height: 30px; }
+        .admin-tag { background: var(--tag-bg); color: var(--tag-text); font-family: var(--font-mono); font-size: 0.78rem; padding: 0.2rem 0.4rem; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 0.3rem; border-radius: 2px; }
+        .admin-tag .remove-tag { cursor: pointer; color: #cc0000; font-size: 0.9rem; line-height: 1; background: none; border: none; padding: 0; font-weight: bold; }
+        .admin-add-row { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+        .admin-add-row input { flex: 1; font-family: var(--font-mono); font-size: 0.88rem; padding: 0.4rem; border: 1px solid var(--border-color); background: var(--bg-page); color: var(--text-main); }
+        .admin-add-row button { font-size: 0.88rem; padding: 0.4rem 0.8rem; }
+        .admin-actions { display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem; }
+        .admin-save-btn { background: var(--accent-color); color: var(--bg-page); border-color: var(--accent-color); }
+        .admin-save-btn:hover { opacity: 0.85; }
+        .admin-notice { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem; }
+        .admin-success { color: #009900; }
+        .admin-error { color: #cc0000; }
+
+        /* --- FRUTIGER AERO THEME --- */
         .frutiger-aero-theme {
-            --bg-main: #e0f7fa;
-            --bg-page: #ffffff;
-            --text-main: #00695c;
-            --text-muted: #004d40;
-            --border-color: #b2dfdb;
-            --accent-color: #00796b;
-            --button-bg: #b2ebf2;
+            --bg-main: #e0f7fa; --bg-page: #ffffff; --text-main: #00695c; --text-muted: #004d40;
+            --border-color: #b2dfdb; --accent-color: #00796b; --button-bg: #b2ebf2;
             --font-body: 'Comic Sans MS', 'Papyrus', cursive, fantasy, sans-serif;
             --font-mono: 'Comic Sans MS', 'Papyrus', cursive, fantasy, monospace;
-            font-size: 2.2em !important;
-            text-transform: capitalize !important;
+            font-size: 2.2em !important; text-transform: capitalize !important;
             background: url('aero.jpg') center center/cover no-repeat fixed !important;
         }
     </style>
@@ -58,33 +138,163 @@
     </div>
 
     <main id="main-content" class="hidden">
-        <header><h1 id="main-title"></h1><p>boot time: <span id="boot-time"></span></p></header><hr>
+        <header>
+            <h1 id="main-title"></h1>
+            <p>boot time: <span id="boot-time"></span></p>
+        </header>
+        <hr>
+
+        <!-- WELCOME / LOCATION -->
         <section>
             <h2>welcome</h2>
             <div id="geolocation"></div>
             <div id="current-time"></div>
-            <div id="map" style="height: 300px; margin: 1em 0; border: 1px solid var(--border-color); border-radius: 8px;"></div>
-            <div id="furthest-town-info" style="margin-top: 1em; font-family: var(--font-mono);"></div>
-        </section><hr>
-        <section><h2>scott facts</h2><h3>countries visited (<span id="countries-count">0</span>/197)</h3><ul id="countries-list"></ul><h3>currently reading</h3><div id="current-book"></div></section><hr>
+            <div id="map" style="height: 300px; margin: 1em 0; border: 1px solid var(--border-color); border-radius: 4px;"></div>
+            <div id="furthest-town-info" style="margin-top: 1em; font-family: var(--font-mono); font-size: 0.88rem;"></div>
+        </section>
+        <hr>
+
+        <!-- SCOTT FACTS -->
+        <section>
+            <h2>scott facts</h2>
+
+            <!-- Countries -->
+            <h3>countries visited</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-num" id="countries-count">0</div>
+                    <div class="stat-desc">countries visited</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-num" id="countries-pct">0%</div>
+                    <div class="stat-desc">of the world (197)</div>
+                </div>
+            </div>
+            <div class="stat-bar-wrap">
+                <div class="stat-bar-label" id="countries-bar-label"></div>
+                <div class="stat-bar"><div class="stat-bar-fill" id="countries-bar" style="width:0%"></div></div>
+            </div>
+
+            <button class="collapse-toggle" id="toggle-continents">by continent</button>
+            <div class="collapsible-body" id="continents-body" style="max-height: 300px;">
+                <ul class="continent-list" id="continent-list"></ul>
+            </div>
+
+            <button class="collapse-toggle" id="toggle-countries" style="margin-top:0.5rem;">full list</button>
+            <div class="collapsible-body" id="countries-body" style="max-height: 400px;">
+                <div class="tag-list" id="countries-tags"></div>
+            </div>
+
+            <!-- Books -->
+            <h3 style="margin-top: 1.5rem;">reading</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-num" id="books-read-count">0</div>
+                    <div class="stat-desc">books finished</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-num" id="books-reading-count">0</div>
+                    <div class="stat-desc">currently reading</div>
+                </div>
+            </div>
+
+            <h3>currently reading</h3>
+            <div id="current-books-list"></div>
+
+            <button class="collapse-toggle" id="toggle-books-read" style="margin-top:0.75rem;">books finished</button>
+            <div class="collapsible-body" id="books-read-body" style="max-height: 400px;">
+                <div id="books-read-list"></div>
+            </div>
+        </section>
+        <hr>
+
+        <!-- TIME / LIFE STATS -->
         <section>
             <h2>time</h2>
-            <div>age: <span id="current-age"></span></div>
-            <div>death age (ONS): <span id="death-age"></span></div>
-            <div id="percent-done" style="margin-top: 0.5rem; font-family: var(--font-mono);"></div>
-            <div id="percent-left" style="font-family: var(--font-mono);"></div>
-        </section><hr>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-num" id="current-age-int">0</div>
+                    <div class="stat-desc">years old</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-num" id="pct-left-big">0%</div>
+                    <div class="stat-desc">estimated life remaining</div>
+                </div>
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+                age: <span id="current-age"></span> &nbsp;·&nbsp; death age (ONS): <span id="death-age"></span>
+            </div>
+            <div class="stat-bar-wrap">
+                <div class="stat-bar-label" id="life-bar-label"></div>
+                <div class="stat-bar"><div class="stat-bar-fill" id="life-bar" style="width:0%"></div></div>
+            </div>
+            <div id="percent-done" style="font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-muted);"></div>
+            <div id="percent-left" style="font-family: var(--font-mono); font-size: 0.82rem; color: var(--text-muted);"></div>
+        </section>
+        <hr>
+
+        <!-- FOOTER -->
         <footer>
-            <div class="theme-switch-wrapper">
-                <label class="theme-switch" for="theme-checkbox">
-                    <input type="checkbox" id="theme-checkbox" />
-                    <div class="slider round"></div>
-                </label>
-                <em>aero mode</em>
+            <div class="footer-controls">
+                <div class="theme-switch-wrapper">
+                    <label class="theme-switch dark-switch" for="dark-checkbox">
+                        <input type="checkbox" id="dark-checkbox" />
+                        <div class="slider round"></div>
+                    </label>
+                    <em>dark mode</em>
+                </div>
+                <div class="theme-switch-wrapper">
+                    <label class="theme-switch" for="theme-checkbox">
+                        <input type="checkbox" id="theme-checkbox" />
+                        <div class="slider round"></div>
+                    </label>
+                    <em>aero mode</em>
+                </div>
+                <button id="admin-btn" title="edit data">⚙ edit</button>
             </div>
             <p><em>(c) 2000 scott forbes</em></p>
         </footer>
     </main>
+
+    <!-- ADMIN PANEL OVERLAY -->
+    <div id="admin-overlay" class="admin-overlay hidden">
+        <div class="admin-panel">
+            <h2>⚙ admin edit</h2>
+
+            <div class="admin-section">
+                <h3>countries visited</h3>
+                <div id="admin-countries-list" class="admin-tag-list"></div>
+                <div class="admin-add-row">
+                    <input type="text" id="admin-new-country" placeholder="add country...">
+                    <button id="admin-add-country-btn">add</button>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h3>currently reading</h3>
+                <div id="admin-current-books-list" class="admin-tag-list"></div>
+                <div class="admin-add-row">
+                    <input type="text" id="admin-new-current-book" placeholder="title - author">
+                    <button id="admin-add-current-book-btn">add</button>
+                </div>
+            </div>
+
+            <div class="admin-section">
+                <h3>books finished</h3>
+                <div id="admin-read-books-list" class="admin-tag-list"></div>
+                <div class="admin-add-row">
+                    <input type="text" id="admin-new-read-book" placeholder="title - author">
+                    <button id="admin-add-read-book-btn">add</button>
+                </div>
+            </div>
+
+            <div class="admin-actions">
+                <span id="admin-notice" class="admin-notice"></span>
+                <button id="admin-close-btn">cancel</button>
+                <button id="admin-save-btn" class="admin-save-btn">save changes</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Security Configuration -->
     <script src="config.js"></script>
