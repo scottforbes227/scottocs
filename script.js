@@ -4,11 +4,16 @@ const ctx = canvas.getContext('2d');
 const W = 800, H = 480;
 const GRAVITY = 0.55, GROUND_Y = H - 70, HEAD_R = 28, BALL_R = 18;
 const GOAL_W = 60, GOAL_H = 140, PLAYER_SPD = 5.5, JUMP_V = -14, WIN_SCORE = 5;
-const GRID_COLS = 6, GRID_ROWS = 4, CARD_W = 126, CARD_H = 90, CARD_GAP = 4;
-const GRID_X = (W - (GRID_COLS * CARD_W + (GRID_COLS - 1) * CARD_GAP)) / 2;
-const GRID_Y = 88;
+const GRID_COLS = 8, GRID_ROWS = 6, CARD_W = 88, CARD_H = 62, CARD_GAP = 3;
+const GRID_X = Math.round((W - (GRID_COLS * CARD_W + (GRID_COLS - 1) * CARD_GAP)) / 2);
+const GRID_Y = 68;
 
-// ── Flag helpers ────────────────────────────────────────────────────────────
+// Subway Surfers constants
+const SS_X = W - 190, SS_Y = H - 90, SS_W = 185, SS_H = 84;
+const SS_HDR = 14, SS_CHAR_X = 28;
+const SS_LC = [SS_HDR + 12, SS_HDR + 35, SS_HDR + 58]; // lane centers (y relative to window)
+
+// ── Flag helpers ─────────────────────────────────────────────────────────────
 const hFlag = (c1,c2,c3) => (c,x,y,w,h) => {
     c.fillStyle=c1;c.fillRect(x,y,w,h/3);
     c.fillStyle=c2;c.fillRect(x,y+h/3,w,h/3);
@@ -37,7 +42,6 @@ const diagFlag = (bg,di,inn) => (c,x,y,w,h) => {
     c.closePath();c.fill();
     c.fillStyle=inn;c.beginPath();c.arc(x+w/2,y+h/2,h*.22,0,Math.PI*2);c.fill();
 };
-// Wide-top flag (Colombia / Ecuador style: top=50%, mid=25%, bot=25%)
 const wideTopFlag = (top,mid,bot) => (c,x,y,w,h) => {
     c.fillStyle=top;c.fillRect(x,y,w,h/2);
     c.fillStyle=mid;c.fillRect(x,y+h/2,w,h/4);
@@ -112,35 +116,183 @@ const ausFlag = (c,x,y,w,h) => {
     });
 };
 
-// ── Teams (World Cup 2026) ──────────────────────────────────────────────────
+// ── New flag functions ────────────────────────────────────────────────────────
+// Scotland: white saltire (diagonal cross) on dark blue
+const scotFlag = (c,x,y,w,h) => {
+    c.fillStyle='#003399';c.fillRect(x,y,w,h);
+    c.strokeStyle='#FFFFFF';c.lineWidth=Math.max(3,h*.18);c.lineCap='butt';
+    c.beginPath();c.moveTo(x,y);c.lineTo(x+w,y+h);c.stroke();
+    c.beginPath();c.moveTo(x+w,y);c.lineTo(x,y+h);c.stroke();
+};
+// Turkey: red with white crescent + star
+const turFlag = (c,x,y,w,h) => {
+    c.fillStyle='#E30A17';c.fillRect(x,y,w,h);
+    const cx=x+w*.38,cy=y+h/2,r=h*.32;
+    c.fillStyle='#FFFFFF';c.beginPath();c.arc(cx,cy,r,0,Math.PI*2);c.fill();
+    c.fillStyle='#E30A17';c.beginPath();c.arc(cx+r*.28,cy,r*.78,0,Math.PI*2);c.fill();
+    const sx=cx+r*.9,sy=cy,sr=h*.14;
+    c.fillStyle='#FFFFFF';c.beginPath();
+    for(let i=0;i<5;i++){
+        const a=i*Math.PI*2/5-Math.PI/2,a2=a+Math.PI/5;
+        if(i===0)c.moveTo(sx+sr*Math.cos(a),sy+sr*Math.sin(a));
+        else c.lineTo(sx+sr*Math.cos(a),sy+sr*Math.sin(a));
+        c.lineTo(sx+sr*.4*Math.cos(a2),sy+sr*.4*Math.sin(a2));
+    }
+    c.closePath();c.fill();
+};
+// Ghana: red/gold/green stripes + black star
+const ghanaFlag = (c,x,y,w,h) => {
+    c.fillStyle='#CE1126';c.fillRect(x,y,w,h/3);
+    c.fillStyle='#FCD116';c.fillRect(x,y+h/3,w,h/3);
+    c.fillStyle='#006B3F';c.fillRect(x,y+2*h/3,w,h/3);
+    const cx=x+w/2,cy=y+h/2,r=h*.2;
+    c.fillStyle='#000000';c.beginPath();
+    for(let i=0;i<5;i++){
+        const a=i*Math.PI*2/5-Math.PI/2,a2=a+Math.PI/5;
+        if(i===0)c.moveTo(cx+r*Math.cos(a),cy+r*Math.sin(a));
+        else c.lineTo(cx+r*Math.cos(a),cy+r*Math.sin(a));
+        c.lineTo(cx+r*.4*Math.cos(a2),cy+r*.4*Math.sin(a2));
+    }
+    c.closePath();c.fill();
+};
+// Jamaica: black top/bottom triangles, green left/right, gold X
+const jamFlag = (c,x,y,w,h) => {
+    c.fillStyle='#000000';
+    c.beginPath();c.moveTo(x,y);c.lineTo(x+w,y);c.lineTo(x+w/2,y+h/2);c.closePath();c.fill();
+    c.beginPath();c.moveTo(x,y+h);c.lineTo(x+w,y+h);c.lineTo(x+w/2,y+h/2);c.closePath();c.fill();
+    c.fillStyle='#009B3A';
+    c.beginPath();c.moveTo(x,y);c.lineTo(x,y+h);c.lineTo(x+w/2,y+h/2);c.closePath();c.fill();
+    c.beginPath();c.moveTo(x+w,y);c.lineTo(x+w,y+h);c.lineTo(x+w/2,y+h/2);c.closePath();c.fill();
+    c.strokeStyle='#FED100';c.lineWidth=Math.max(3,h*.15);c.lineCap='butt';
+    c.beginPath();c.moveTo(x,y);c.lineTo(x+w,y+h);c.stroke();
+    c.beginPath();c.moveTo(x+w,y);c.lineTo(x,y+h);c.stroke();
+};
+// Panama: 4 quadrants with colored stars
+const panFlag = (c,x,y,w,h) => {
+    c.fillStyle='#FFFFFF';c.fillRect(x,y,w/2,h/2);
+    c.fillStyle='#D21034';c.fillRect(x+w/2,y,w/2,h/2);
+    c.fillStyle='#005293';c.fillRect(x,y+h/2,w/2,h/2);
+    c.fillStyle='#FFFFFF';c.fillRect(x+w/2,y+h/2,w/2,h/2);
+    const drawStar5=(cx,cy,r,col)=>{
+        c.fillStyle=col;c.beginPath();
+        for(let i=0;i<5;i++){const a=i*Math.PI*2/5-Math.PI/2,a2=a+Math.PI/5;if(i===0)c.moveTo(cx+r*Math.cos(a),cy+r*Math.sin(a));else c.lineTo(cx+r*Math.cos(a),cy+r*Math.sin(a));c.lineTo(cx+r*.4*Math.cos(a2),cy+r*.4*Math.sin(a2));}
+        c.closePath();c.fill();
+    };
+    drawStar5(x+w/4,y+h/4,h*.15,'#005293');
+    drawStar5(x+3*w/4,y+3*h/4,h*.15,'#D21034');
+};
+// South Africa: 6-colour flag approximation
+const rsaFlag = (c,x,y,w,h) => {
+    c.fillStyle='#DE3831';c.fillRect(x,y,w,h/2);
+    c.fillStyle='#002395';c.fillRect(x,y+h/2,w,h/2);
+    c.fillStyle='#007A4D';
+    c.beginPath();c.moveTo(x,y+h*.3);c.lineTo(x+w,y+h*.38);c.lineTo(x+w,y+h*.62);c.lineTo(x,y+h*.7);c.closePath();c.fill();
+    c.fillStyle='#000000';c.beginPath();c.moveTo(x,y);c.lineTo(x,y+h);c.lineTo(x+w*.35,y+h/2);c.closePath();c.fill();
+    c.strokeStyle='#FFFFFF';c.lineWidth=Math.max(2,h*.11);c.lineJoin='round';c.lineCap='round';
+    c.beginPath();c.moveTo(x+w*.02,y+h*.08);c.lineTo(x+w*.37,y+h/2);c.lineTo(x+w*.02,y+h*.92);c.stroke();
+    c.strokeStyle='#FFB612';c.lineWidth=Math.max(1,h*.05);
+    c.beginPath();c.moveTo(x+w*.07,y+h*.2);c.lineTo(x+w*.25,y+h/2);c.lineTo(x+w*.07,y+h*.8);c.stroke();
+};
+// Jordan: black/white/green + red triangle
+const jorFlag = (c,x,y,w,h) => {
+    c.fillStyle='#000000';c.fillRect(x,y,w,h/3);
+    c.fillStyle='#FFFFFF';c.fillRect(x,y+h/3,w,h/3);
+    c.fillStyle='#007A3D';c.fillRect(x,y+2*h/3,w,h/3);
+    c.fillStyle='#CE1126';
+    c.beginPath();c.moveTo(x,y);c.lineTo(x+w*.38,y+h/2);c.lineTo(x,y+h);c.closePath();c.fill();
+};
+// New Zealand: dark blue, union jack top-left, 4 red stars
+const nzlFlag = (c,x,y,w,h) => {
+    c.fillStyle='#00247D';c.fillRect(x,y,w,h);
+    const uw=w*.44,uh=h*.5;
+    c.save();c.beginPath();c.rect(x,y,uw,uh);c.clip();
+    c.strokeStyle='#FFFFFF';c.lineWidth=uh*.22;
+    c.beginPath();c.moveTo(x,y);c.lineTo(x+uw,y+uh);c.stroke();
+    c.beginPath();c.moveTo(x+uw,y);c.lineTo(x,y+uh);c.stroke();
+    c.strokeStyle='#CF142B';c.lineWidth=uh*.1;
+    c.beginPath();c.moveTo(x,y);c.lineTo(x+uw,y+uh);c.stroke();
+    c.beginPath();c.moveTo(x+uw,y);c.lineTo(x,y+uh);c.stroke();
+    c.strokeStyle='#FFFFFF';c.lineWidth=uh*.32;
+    c.beginPath();c.moveTo(x+uw/2,y);c.lineTo(x+uw/2,y+uh);c.stroke();
+    c.beginPath();c.moveTo(x,y+uh/2);c.lineTo(x+uw,y+uh/2);c.stroke();
+    c.strokeStyle='#CF142B';c.lineWidth=uh*.16;
+    c.beginPath();c.moveTo(x+uw/2,y);c.lineTo(x+uw/2,y+uh);c.stroke();
+    c.beginPath();c.moveTo(x,y+uh/2);c.lineTo(x+uw,y+uh/2);c.stroke();
+    c.restore();
+    [[.72,.28],[.86,.47],[.72,.66],[.62,.5]].forEach(([rx,ry])=>{
+        c.fillStyle='#CC0000';c.beginPath();c.arc(x+rx*w,y+ry*h,h*.055,0,Math.PI*2);c.fill();
+        c.fillStyle='#FFFFFF';c.beginPath();c.arc(x+rx*w,y+ry*h,h*.03,0,Math.PI*2);c.fill();
+    });
+};
+// Saudi Arabia: green with white sword
+const ksaFlag = (c,x,y,w,h) => {
+    c.fillStyle='#006C35';c.fillRect(x,y,w,h);
+    c.fillStyle='#FFFFFF';
+    c.fillRect(x+w*.12,y+h*.44,w*.65,h*.09);
+    c.fillRect(x+w*.72,y+h*.33,w*.08,h*.33);
+    c.fillRect(x+w*.67,y+h*.38,w*.18,h*.07);
+};
+// Poland: white top, red bottom
+const polFlag = (c,x,y,w,h) => {
+    c.fillStyle='#FFFFFF';c.fillRect(x,y,w,h/2);
+    c.fillStyle='#DC143C';c.fillRect(x,y+h/2,w,h/2);
+};
+// Uzbekistan: sky blue / white / green (simplified)
+const uzFlag = hFlag('#1BBEBD','#FFFFFF','#1EB53A');
+
+// ── Teams (World Cup 2026 — all 48, sorted by abbr) ──────────────────────────
 const TEAMS = [
-    {abbr:'ARG',name:'Argentina',  player:'Messi',     color:'#5fa8e0',light:'#aaddff', drawFlag:hFlag('#74ACDF','#FFFFFF','#74ACDF')},
-    {abbr:'AUS',name:'Australia',  player:'Leckie',    color:'#003087',light:'#5577cc', drawFlag:ausFlag},
-    {abbr:'BEL',name:'Belgium',    player:'Lukaku',    color:'#222222',light:'#F5D90A', drawFlag:vFlag('#000000','#F5D90A','#EF3340')},
-    {abbr:'BRA',name:'Brazil',     player:'Vinicius',  color:'#009c3b',light:'#44dd77', drawFlag:diagFlag('#009c3b','#FFDF00','#003087')},
-    {abbr:'CAN',name:'Canada',     player:'Davies',    color:'#cc0000',light:'#ff8888', drawFlag:vFlag('#FF0000','#FFFFFF','#FF0000')},
-    {abbr:'COL',name:'Colombia',   player:'L. Díaz',   color:'#b07d00',light:'#ffdd44', drawFlag:wideTopFlag('#FCD116','#003893','#CE1126')},
-    {abbr:'CRO',name:'Croatia',    player:'Modrić',    color:'#aa0000',light:'#ee5555', drawFlag:croFlag},
-    {abbr:'DEN',name:'Denmark',    player:'Eriksen',   color:'#C60C30',light:'#ff6688', drawFlag:crossFlag('#C60C30','#FFFFFF')},
-    {abbr:'ECU',name:'Ecuador',    player:'Caicedo',   color:'#8a6700',light:'#ffee55', drawFlag:wideTopFlag('#FFD100','#034EA2','#EF3340')},
-    {abbr:'ENG',name:'England',    player:'Kane',      color:'#aa2222',light:'#ff7777', drawFlag:crossFlag('#FFFFFF','#CF142B')},
-    {abbr:'ESP',name:'Spain',      player:'Yamal',     color:'#c60b1e',light:'#ff8844', drawFlag:espFlag},
-    {abbr:'FRA',name:'France',     player:'Mbappé',    color:'#002395',light:'#5577ff', drawFlag:vFlag('#002395','#FFFFFF','#ED2939')},
-    {abbr:'GER',name:'Germany',    player:'Wirtz',     color:'#333333',light:'#FFCE00', drawFlag:hFlag('#000000','#DD0000','#FFCE00')},
-    {abbr:'IRN',name:'Iran',       player:'Taremi',    color:'#1a7a2e',light:'#55cc77', drawFlag:hFlag('#239F40','#FFFFFF','#DA0000')},
-    {abbr:'ITA',name:'Italy',      player:'Barella',   color:'#003580',light:'#5588ff', drawFlag:vFlag('#009246','#FFFFFF','#CE2B37')},
-    {abbr:'JPN',name:'Japan',      player:'Kubo',      color:'#000080',light:'#6666dd', drawFlag:circFlag('#FFFFFF','#BC002D')},
-    {abbr:'KOR',name:'S. Korea',   player:'Son',       color:'#8e1a24',light:'#ee5566', drawFlag:korFlag},
-    {abbr:'MAR',name:'Morocco',    player:'Hakimi',    color:'#8e1018',light:'#dd4455', drawFlag:marFlag},
-    {abbr:'MEX',name:'Mexico',     player:'Lozano',    color:'#006847',light:'#44bb88', drawFlag:vFlag('#006847','#FFFFFF','#CE1126')},
-    {abbr:'NED',name:'Netherlands',player:'Van Dijk',  color:'#cc4400',light:'#ff9944', drawFlag:hFlag('#AE1C28','#FFFFFF','#21468B')},
-    {abbr:'POR',name:'Portugal',   player:'Ronaldo',   color:'#006600',light:'#44cc55', drawFlag:porFlag},
-    {abbr:'SEN',name:'Senegal',    player:'Mané',      color:'#006030',light:'#44bb77', drawFlag:vFlag('#00853F','#FDEF42','#E31B23')},
-    {abbr:'URU',name:'Uruguay',    player:'Núñez',     color:'#4a9acc',light:'#88ccff', drawFlag:hFlag('#5CB8E4','#FFFFFF','#5CB8E4')},
-    {abbr:'USA',name:'USA',        player:'Pulisic',   color:'#002868',light:'#5577dd', drawFlag:usaFlag},
+    {abbr:'ARG',name:'Argentina',  player:'Messi',         color:'#5fa8e0',light:'#aaddff', drawFlag:hFlag('#74ACDF','#FFFFFF','#74ACDF')},
+    {abbr:'AUS',name:'Australia',  player:'Leckie',        color:'#003087',light:'#5577cc', drawFlag:ausFlag},
+    {abbr:'AUT',name:'Austria',    player:'Sabitzer',      color:'#991a1a',light:'#ff7070', drawFlag:hFlag('#ED2939','#FFFFFF','#ED2939')},
+    {abbr:'BEL',name:'Belgium',    player:'Lukaku',        color:'#222222',light:'#F5D90A', drawFlag:vFlag('#000000','#F5D90A','#EF3340')},
+    {abbr:'BRA',name:'Brazil',     player:'Vinicius',      color:'#009c3b',light:'#44dd77', drawFlag:diagFlag('#009c3b','#FFDF00','#003087')},
+    {abbr:'CAN',name:'Canada',     player:'Davies',        color:'#cc0000',light:'#ff8888', drawFlag:vFlag('#FF0000','#FFFFFF','#FF0000')},
+    {abbr:'CIV',name:'Ivory Coast',player:'Pépé',          color:'#994400',light:'#ffaa44', drawFlag:vFlag('#F77F00','#FFFFFF','#009A44')},
+    {abbr:'CMR',name:'Cameroon',   player:'Mbeumo',        color:'#004D2E',light:'#44bb77', drawFlag:vFlag('#007A5E','#CE1126','#FCD116')},
+    {abbr:'COL',name:'Colombia',   player:'L. Díaz',       color:'#b07d00',light:'#ffdd44', drawFlag:wideTopFlag('#FCD116','#003893','#CE1126')},
+    {abbr:'CRC',name:'Costa Rica', player:'Navas',         color:'#001B5B',light:'#5566cc', drawFlag:hFlag('#002B7F','#FFFFFF','#CE1126')},
+    {abbr:'CRO',name:'Croatia',    player:'Modrić',        color:'#aa0000',light:'#ee5555', drawFlag:croFlag},
+    {abbr:'DEN',name:'Denmark',    player:'Eriksen',       color:'#C60C30',light:'#ff6688', drawFlag:crossFlag('#C60C30','#FFFFFF')},
+    {abbr:'ECU',name:'Ecuador',    player:'Caicedo',       color:'#8a6700',light:'#ffee55', drawFlag:wideTopFlag('#FFD100','#034EA2','#EF3340')},
+    {abbr:'EGY',name:'Egypt',      player:'Salah',         color:'#8B1A1A',light:'#cc4444', drawFlag:hFlag('#CE1126','#FFFFFF','#000000')},
+    {abbr:'ENG',name:'England',    player:'Kane',          color:'#aa2222',light:'#ff7777', drawFlag:crossFlag('#FFFFFF','#CF142B')},
+    {abbr:'ESP',name:'Spain',      player:'Yamal',         color:'#c60b1e',light:'#ff8844', drawFlag:espFlag},
+    {abbr:'FRA',name:'France',     player:'Mbappé',        color:'#002395',light:'#5577ff', drawFlag:vFlag('#002395','#FFFFFF','#ED2939')},
+    {abbr:'GER',name:'Germany',    player:'Wirtz',         color:'#333333',light:'#FFCE00', drawFlag:hFlag('#000000','#DD0000','#FFCE00')},
+    {abbr:'GHA',name:'Ghana',      player:'Kudus',         color:'#6B4500',light:'#ffcc44', drawFlag:ghanaFlag},
+    {abbr:'HON',name:'Honduras',   player:'Elis',          color:'#004080',light:'#4488dd', drawFlag:hFlag('#0073CF','#FFFFFF','#0073CF')},
+    {abbr:'IRN',name:'Iran',       player:'Taremi',        color:'#1a7a2e',light:'#55cc77', drawFlag:hFlag('#239F40','#FFFFFF','#DA0000')},
+    {abbr:'IRQ',name:'Iraq',       player:'Al-Hamdani',    color:'#770010',light:'#cc4444', drawFlag:hFlag('#CE1126','#FFFFFF','#000000')},
+    {abbr:'ITA',name:'Italy',      player:'Barella',       color:'#003580',light:'#5588ff', drawFlag:vFlag('#009246','#FFFFFF','#CE2B37')},
+    {abbr:'JAM',name:'Jamaica',    player:'Gray',          color:'#4D4400',light:'#cccc00', drawFlag:jamFlag},
+    {abbr:'JOR',name:'Jordan',     player:'Al-Taamari',    color:'#003A1E',light:'#44aa55', drawFlag:jorFlag},
+    {abbr:'JPN',name:'Japan',      player:'Kubo',          color:'#000080',light:'#6666dd', drawFlag:circFlag('#FFFFFF','#BC002D')},
+    {abbr:'KOR',name:'S. Korea',   player:'Son',           color:'#8e1a24',light:'#ee5566', drawFlag:korFlag},
+    {abbr:'KSA',name:'Saudi Arabia',player:'Al-Dawsari',   color:'#003518',light:'#44aa66', drawFlag:ksaFlag},
+    {abbr:'MAR',name:'Morocco',    player:'Hakimi',        color:'#8e1018',light:'#dd4455', drawFlag:marFlag},
+    {abbr:'MEX',name:'Mexico',     player:'Lozano',        color:'#006847',light:'#44bb88', drawFlag:vFlag('#006847','#FFFFFF','#CE1126')},
+    {abbr:'NED',name:'Netherlands',player:'Van Dijk',      color:'#cc4400',light:'#ff9944', drawFlag:hFlag('#AE1C28','#FFFFFF','#21468B')},
+    {abbr:'NGA',name:'Nigeria',    player:'Osimhen',       color:'#004D25',light:'#44cc66', drawFlag:vFlag('#008751','#FFFFFF','#008751')},
+    {abbr:'NZL',name:'New Zealand',player:'Wood',          color:'#00247D',light:'#4466cc', drawFlag:nzlFlag},
+    {abbr:'PAN',name:'Panama',     player:'Blackburn',     color:'#6B0C1A',light:'#dd4466', drawFlag:panFlag},
+    {abbr:'PAR',name:'Paraguay',   player:'Almirón',       color:'#6B0010',light:'#ee4455', drawFlag:hFlag('#D52B1E','#FFFFFF','#0038A8')},
+    {abbr:'POL',name:'Poland',     player:'Lewandowski',   color:'#6B0C1A',light:'#ee8899', drawFlag:polFlag},
+    {abbr:'POR',name:'Portugal',   player:'Ronaldo',       color:'#006600',light:'#44cc55', drawFlag:porFlag},
+    {abbr:'RSA',name:'South Africa',player:'Percy Tau',    color:'#004020',light:'#44aa77', drawFlag:rsaFlag},
+    {abbr:'SCO',name:'Scotland',   player:'McGinn',        color:'#002288',light:'#4466ff', drawFlag:scotFlag},
+    {abbr:'SEN',name:'Senegal',    player:'Mané',          color:'#006030',light:'#44bb77', drawFlag:vFlag('#00853F','#FDEF42','#E31B23')},
+    {abbr:'SRB',name:'Serbia',     player:'Vlahović',      color:'#6B1A20',light:'#dd4455', drawFlag:hFlag('#C6363C','#0C4076','#FFFFFF')},
+    {abbr:'SUI',name:'Switzerland',player:'Xhaka',         color:'#880000',light:'#ff5555', drawFlag:crossFlag('#FF0000','#FFFFFF')},
+    {abbr:'TUN',name:'Tunisia',    player:'Mejbri',        color:'#880010',light:'#dd5555', drawFlag:circFlag('#E70013','#FFFFFF')},
+    {abbr:'TUR',name:'Turkey',     player:'Güler',         color:'#6B0408',light:'#ff4455', drawFlag:turFlag},
+    {abbr:'URU',name:'Uruguay',    player:'Núñez',         color:'#4a9acc',light:'#88ccff', drawFlag:hFlag('#5CB8E4','#FFFFFF','#5CB8E4')},
+    {abbr:'USA',name:'USA',        player:'Pulisic',       color:'#002868',light:'#5577dd', drawFlag:usaFlag},
+    {abbr:'UZB',name:'Uzbekistan', player:'Shomurodov',    color:'#004040',light:'#44aaaa', drawFlag:uzFlag},
+    {abbr:'VEN',name:'Venezuela',  player:'J. Martínez',  color:'#5B3000',light:'#ffcc44', drawFlag:hFlag('#FDD116','#002B7F','#CF142B')},
 ];
 
-// ── Quiz Questions (100 questions, d:1=easy d:2=medium d:3=hard) ───────────
+// ── Quiz Questions (100 questions, d:1=easy d:2=medium d:3=hard) ─────────────
 const QUESTIONS = [
 // Easy
 {q:"What is the capital of France?",                          o:["London","Berlin","Rome","Paris"],              a:3,d:1},
@@ -247,11 +399,11 @@ const QUESTIONS = [
 {q:"In what year was the Eiffel Tower built?",                o:["1879","1884","1889","1895"],                   a:2,d:3},
 ];
 
-// ── Prize ladder ──────────────────────────────────────────────────────────
+// ── Prize ladder ──────────────────────────────────────────────────────────────
 const PRIZES = ['$100','$200','$300','$500','$1,000','$2,000','$4,000','$8,000','$16,000','$32,000','$64,000','$125,000','$250,000','$500,000','$1,000,000'];
-const SAFE_LEVELS = [4, 9]; // 0-indexed (after question 5 and 10)
+const SAFE_LEVELS = [4, 9];
 
-// ── Input ─────────────────────────────────────────────────────────────────
+// ── Input ─────────────────────────────────────────────────────────────────────
 const keys = {}, prevKeys = {};
 window.addEventListener('keydown', e => {
     keys[e.code] = true;
@@ -260,31 +412,39 @@ window.addEventListener('keydown', e => {
 window.addEventListener('keyup', e => { keys[e.code] = false; });
 function justPressed(code) { return keys[code] && !prevKeys[code]; }
 
-// ── Game state ────────────────────────────────────────────────────────────
+// ── Game state ────────────────────────────────────────────────────────────────
 let gameState = 'teamSelect';
 let score1 = 0, score2 = 0;
 let goalTimer = 0, winner = '', goalScoredBy = '';
 let particles = [];
 let p1, p2, ball;
-let p1Team = TEAMS[0], p2Team = TEAMS[23];
+let p1Team = TEAMS[0], p2Team = TEAMS[47];
 let sel1 = { col: 0, row: 0, confirmed: false };
-let sel2 = { col: 5, row: 3, confirmed: false };
+let sel2 = { col: 7, row: 5, confirmed: false };
 
-// ── Quiz state ────────────────────────────────────────────────────────────
+// ── Quiz state ────────────────────────────────────────────────────────────────
 const quiz = {
     open: false, prevGameState: 'teamSelect',
-    gs: 'idle',  // 'idle' | 'playing' | 'won' | 'lost'
+    gs: 'idle',
     level: 0, qs: [], sel: -1,
-    phase: 'pick', // 'pick' | 'locking' | 'revealing' | 'done'
+    phase: 'pick',
     phaseTimer: 0,
     lifelines: { fifty: true, phone: true, audience: true },
-    elim: [],        // indices eliminated by 50/50
-    phoneTimer: 0,   // frames phone hint shows
-    audience: null,  // [pct,pct,pct,pct] or null
+    elim: [],
+    phoneTimer: 0,
+    audience: null,
     walked: false,
 };
 
-const QUIZ_BTN = { x: W - 108, y: H - 36, w: 103, h: 30 };
+const QUIZ_BTN = { x: 5, y: H - 36, w: 103, h: 30 };
+
+// ── Subway Surfers state ──────────────────────────────────────────────────────
+const ss = {
+    lane: 1, laneYCur: SS_LC[1],
+    score: 0, obstacles: [], coins: [],
+    spawnTimer: 50, coinTimer: 15,
+    switchCooldown: 0, coinScore: 0,
+};
 
 function quizInit() {
     const easy   = shuffle(QUESTIONS.filter(q => q.d === 1)).slice(0, 5);
@@ -309,7 +469,7 @@ function quizGuaranteed() {
     return '$0';
 }
 
-// ── Canvas click handler ──────────────────────────────────────────────────
+// ── Canvas click handler ──────────────────────────────────────────────────────
 canvas.addEventListener('click', e => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = W / rect.width, scaleY = H / rect.height;
@@ -320,7 +480,6 @@ canvas.addEventListener('click', e => {
 
 function handleClick(mx, my) {
     if (!quiz.open) {
-        // Quiz button
         if (mx >= QUIZ_BTN.x && mx <= QUIZ_BTN.x + QUIZ_BTN.w &&
             my >= QUIZ_BTN.y && my <= QUIZ_BTN.y + QUIZ_BTN.h) {
             quiz.prevGameState = gameState;
@@ -328,18 +487,15 @@ function handleClick(mx, my) {
         }
         return;
     }
-    // Quiz is open
     if (quiz.gs === 'idle') { quizInit(); return; }
     if (quiz.gs === 'won' || quiz.gs === 'lost') {
         if (inBox(mx, my, 260, 360, 280, 36)) { quiz.open = false; gameState = quiz.prevGameState; }
         return;
     }
     if (quiz.gs !== 'playing') return;
-    // Back button (always)
     if (inBox(mx, my, 10, H - 38, 100, 28)) { quiz.open = false; gameState = quiz.prevGameState; return; }
 
     if (quiz.phase === 'pick') {
-        // Answer boxes
         const boxes = getAnswerBoxes();
         boxes.forEach((b, i) => {
             if (!quiz.elim.includes(i) && inBox(mx, my, b.x, b.y, b.w, b.h)) {
@@ -348,11 +504,9 @@ function handleClick(mx, my) {
                 quiz.phaseTimer = 55;
             }
         });
-        // Lifelines
         if (quiz.lifelines.fifty   && inBox(mx, my, 25, 300, 80, 34)) useFifty();
         if (quiz.lifelines.phone   && inBox(mx, my, 115, 300, 80, 34)) usePhone();
         if (quiz.lifelines.audience && inBox(mx, my, 205, 300, 80, 34)) useAudience();
-        // Walk away
         if (inBox(mx, my, 10, 345, 120, 30)) quizWalkAway();
     }
 }
@@ -397,7 +551,7 @@ function useAudience() {
     quiz.audience = pcts;
 }
 
-// ── Entity factories ──────────────────────────────────────────────────────
+// ── Entity factories ──────────────────────────────────────────────────────────
 function makePlayer(x, team, facing) {
     return { x, y: GROUND_Y - HEAD_R, vx: 0, vy: 0, onGround: true, facing, team, kickTimer: 0, kickCooldown: 0 };
 }
@@ -411,7 +565,7 @@ function resetEntities() {
     ball = makeBall(); particles = [];
 }
 
-// ── Physics ───────────────────────────────────────────────────────────────
+// ── Physics ───────────────────────────────────────────────────────────────────
 function updatePlayer(p, leftCode, rightCode, jumpCode, kickCode) {
     if (keys[leftCode])  { p.vx -= 1.1; p.facing = -1; }
     if (keys[rightCode]) { p.vx += 1.1; p.facing =  1; }
@@ -492,7 +646,7 @@ function checkGoal() {
     return null;
 }
 
-// ── Particles ─────────────────────────────────────────────────────────────
+// ── Particles ─────────────────────────────────────────────────────────────────
 function spawnGoalParticles() {
     for (let i=0;i<70;i++){const a=Math.random()*Math.PI*2,s=2+Math.random()*10;particles.push({x:W/2,y:H/2,vx:Math.cos(a)*s,vy:Math.sin(a)*s-4,life:1,decay:.011+Math.random()*.013,r:4+Math.random()*7,color:`hsl(${Math.random()*60+20},100%,60%)`});}
 }
@@ -504,7 +658,75 @@ function updateParticles() {
     particles=particles.filter(p=>p.life>0);
 }
 
-// ── Drawing ───────────────────────────────────────────────────────────────
+// ── Subway Surfers update ─────────────────────────────────────────────────────
+function updateSubwaySurfers() {
+    ss.score++;
+    if (ss.switchCooldown > 0) ss.switchCooldown--;
+
+    const speed = 2 + Math.min(ss.score / 3000, 2.5);
+
+    // Spawn obstacles
+    if (--ss.spawnTimer <= 0) {
+        const lane = Math.floor(Math.random() * 3);
+        const trainW = 20 + Math.floor(Math.random() * 22);
+        const hue = Math.floor(Math.random() * 40 + 190);
+        ss.obstacles.push({ lane, x: SS_W - 8, w: trainW, color: `hsl(${hue},65%,38%)` });
+        // Occasionally block two lanes
+        if (Math.random() < 0.18) {
+            const lane2 = (lane + 1 + Math.floor(Math.random() * 2)) % 3;
+            ss.obstacles.push({ lane: lane2, x: SS_W - 8, w: 18, color: `hsl(${hue+15},65%,38%)` });
+        }
+        ss.spawnTimer = 40 + Math.floor(Math.random() * 35);
+    }
+
+    // Spawn coins
+    if (--ss.coinTimer <= 0) {
+        ss.coins.push({ lane: Math.floor(Math.random() * 3), x: SS_W - 5 });
+        ss.coinTimer = 16 + Math.floor(Math.random() * 10);
+    }
+
+    // Move
+    ss.obstacles.forEach(o => o.x -= speed);
+    ss.coins.forEach(c => c.x -= speed * 0.7);
+    ss.obstacles = ss.obstacles.filter(o => o.x + (o.w || 20) > 0);
+    ss.coins = ss.coins.filter(c => c.x > -5);
+
+    // Collect coins
+    ss.coins = ss.coins.filter(c => {
+        if (c.lane === ss.lane && c.x < SS_CHAR_X + 10 && c.x > SS_CHAR_X - 12) {
+            ss.coinScore++;
+            return false;
+        }
+        return true;
+    });
+
+    // AI: dodge nearest threat in same lane
+    if (ss.switchCooldown === 0) {
+        const threat = ss.obstacles.find(o =>
+            o.lane === ss.lane &&
+            o.x < SS_CHAR_X + 62 &&
+            o.x + (o.w || 20) > SS_CHAR_X - 8
+        );
+        if (threat) {
+            const free = [0, 1, 2].filter(l =>
+                l !== ss.lane &&
+                !ss.obstacles.some(o => o.lane === l && o.x < SS_CHAR_X + 62 && o.x + (o.w || 20) > SS_CHAR_X - 8)
+            );
+            if (free.length > 0) {
+                // Prefer middle lane
+                const preferred = free.includes(1) ? 1 : free[0];
+                ss.lane = preferred;
+                ss.switchCooldown = 20;
+            }
+        }
+    }
+
+    // Interpolate lane Y
+    const targetY = SS_LC[ss.lane];
+    ss.laneYCur += (targetY - ss.laneYCur) * 0.22;
+}
+
+// ── Drawing ───────────────────────────────────────────────────────────────────
 function drawBackground() {
     const sky=ctx.createLinearGradient(0,0,0,GROUND_Y);sky.addColorStop(0,'#08081e');sky.addColorStop(1,'#101030');
     ctx.fillStyle=sky;ctx.fillRect(0,0,W,GROUND_Y);
@@ -636,48 +858,136 @@ function drawQuizButton() {
     ctx.fillText('QUIZ GAME',x+w/2,y+20);
 }
 
-// ── Team Select ───────────────────────────────────────────────────────────
-function getTeamAt(col,row){return TEAMS[row*GRID_COLS+col]||null;}
+// ── Subway Surfers draw ───────────────────────────────────────────────────────
+function drawSubwaySurfers() {
+    const wx = SS_X, wy = SS_Y, ww = SS_W, wh = SS_H;
+
+    // Window background
+    ctx.fillStyle = 'rgba(0,0,0,0.88)';
+    ctx.beginPath(); ctx.roundRect(wx, wy, ww, wh, 6); ctx.fill();
+    ctx.strokeStyle = '#ff6600'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.roundRect(wx, wy, ww, wh, 6); ctx.stroke();
+
+    // Header
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 9px Arial'; ctx.fillStyle = '#ff6600';
+    ctx.fillText('SUBWAY SURFERS', wx + ww / 2, wy + 10);
+    ctx.font = '8px Arial'; ctx.fillStyle = '#ffcc00';
+    ctx.fillText('AUTO  ' + Math.floor(ss.score / 10).toLocaleString(), wx + ww / 2, wy + SS_HDR - 1);
+
+    // Clip to lane area
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(wx + 1, wy + SS_HDR, ww - 2, wh - SS_HDR - 1);
+    ctx.clip();
+
+    // Lane backgrounds + rails
+    for (let i = 0; i < 3; i++) {
+        const ly = wy + SS_LC[i];
+        ctx.fillStyle = i % 2 === 0 ? '#131313' : '#1c1c1c';
+        ctx.fillRect(wx, ly - 11, ww, 22);
+        // Scrolling ties
+        const tieOffset = (ss.score * 3) % 20;
+        for (let tx = -tieOffset; tx < ww; tx += 20) {
+            ctx.fillStyle = '#2a2a2a';
+            ctx.fillRect(wx + tx, ly - 8, 3, 16);
+        }
+        // Rails
+        ctx.fillStyle = '#555';
+        ctx.fillRect(wx, ly - 5, ww, 2);
+        ctx.fillRect(wx, ly + 3, ww, 2);
+    }
+
+    // Obstacles (trains)
+    ss.obstacles.forEach(o => {
+        const oy = wy + SS_LC[o.lane];
+        const ox = wx + o.x;
+        const ow = o.w || 20, oh = 18;
+        ctx.fillStyle = o.color || '#336699';
+        ctx.fillRect(ox, oy - oh / 2, ow, oh);
+        // Window highlight
+        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        ctx.fillRect(ox + 2, oy - oh / 2 + 2, Math.min(7, ow - 4), 5);
+        // Front light
+        ctx.fillStyle = '#ffff88';
+        ctx.fillRect(ox, oy - 3, 2, 6);
+    });
+
+    // Coins
+    ss.coins.forEach(c => {
+        const cy = wy + SS_LC[c.lane];
+        const cx = wx + c.x;
+        ctx.fillStyle = '#ffdd00';
+        ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#cc9900';
+        ctx.beginPath(); ctx.arc(cx - 1, cy - 1, 2, 0, Math.PI * 2); ctx.fill();
+    });
+
+    // Character (surfer)
+    const charX = wx + SS_CHAR_X;
+    const charY = wy + ss.laneYCur;
+    // Body
+    ctx.fillStyle = '#ff6600';
+    ctx.fillRect(charX - 5, charY - 8, 10, 14);
+    // Head
+    ctx.fillStyle = '#ffcc99';
+    ctx.beginPath(); ctx.arc(charX, charY - 10, 6, 0, Math.PI * 2); ctx.fill();
+    // Backpack (purple)
+    ctx.fillStyle = '#8833cc';
+    ctx.fillRect(charX - 8, charY - 7, 3, 9);
+
+    ctx.restore();
+
+    // Coin score
+    ctx.font = 'bold 8px Arial'; ctx.fillStyle = '#ffdd00'; ctx.textAlign = 'left';
+    ctx.fillText('x' + ss.coinScore, wx + 5, wy + wh - 3);
+    // Coin icon
+    ctx.fillStyle = '#ffdd00';
+    ctx.beginPath(); ctx.arc(wx + 3, wy + wh - 6, 3, 0, Math.PI * 2); ctx.fill();
+}
+
+// ── Team Select ───────────────────────────────────────────────────────────────
+function getTeamAt(col, row) { return TEAMS[row * GRID_COLS + col] || null; }
 
 function drawTeamSelect() {
     drawBackground();
     ctx.fillStyle='rgba(0,0,0,0.75)';ctx.fillRect(0,0,W,H);
-    ctx.textAlign='center';ctx.font='bold 26px Impact';
-    ctx.strokeStyle='#000';ctx.lineWidth=4;ctx.strokeText('WORLD CUP 2026 — SELECT YOUR TEAM',W/2,36);
-    const tg=ctx.createLinearGradient(0,12,0,40);tg.addColorStop(0,'#ffee00');tg.addColorStop(1,'#ff8800');
-    ctx.fillStyle=tg;ctx.fillText('WORLD CUP 2026 — SELECT YOUR TEAM',W/2,36);
-    ctx.font='bold 12px Arial';
-    ctx.fillStyle='#4488ff';ctx.textAlign='left';ctx.fillText('P1: WASD navigate   Space = confirm',14,60);
-    ctx.fillStyle='#ff4444';ctx.textAlign='right';ctx.fillText('P2: Arrow keys navigate   Enter = confirm',W-14,60);
+    ctx.textAlign='center';ctx.font='bold 24px Impact';
+    ctx.strokeStyle='#000';ctx.lineWidth=4;ctx.strokeText('WORLD CUP 2026 — SELECT YOUR TEAM',W/2,34);
+    const tg=ctx.createLinearGradient(0,10,0,38);tg.addColorStop(0,'#ffee00');tg.addColorStop(1,'#ff8800');
+    ctx.fillStyle=tg;ctx.fillText('WORLD CUP 2026 — SELECT YOUR TEAM',W/2,34);
+    ctx.font='bold 11px Arial';
+    ctx.fillStyle='#4488ff';ctx.textAlign='left';ctx.fillText('P1: WASD navigate  Space = confirm',14,56);
+    ctx.fillStyle='#ff4444';ctx.textAlign='right';ctx.fillText('P2: Arrow keys navigate  Enter = confirm',W-14,56);
 
     for(let row=0;row<GRID_ROWS;row++){
         for(let col=0;col<GRID_COLS;col++){
             const team=getTeamAt(col,row);if(!team)continue;
             const cx=GRID_X+col*(CARD_W+CARD_GAP), cy=GRID_Y+row*(CARD_H+CARD_GAP);
             const isP1=sel1.col===col&&sel1.row===row, isP2=sel2.col===col&&sel2.row===row;
-            ctx.fillStyle='rgba(18,18,30,0.8)';ctx.beginPath();ctx.roundRect(cx,cy,CARD_W,CARD_H,6);ctx.fill();
+            ctx.fillStyle='rgba(18,18,30,0.8)';ctx.beginPath();ctx.roundRect(cx,cy,CARD_W,CARD_H,5);ctx.fill();
             if(isP1&&isP2){ctx.strokeStyle='#cc44ff';ctx.lineWidth=3;}
             else if(isP1){ctx.strokeStyle=sel1.confirmed?'#4488ff':'#88aaff';ctx.lineWidth=sel1.confirmed?3:2;}
             else if(isP2){ctx.strokeStyle=sel2.confirmed?'#ff4444':'#ff8888';ctx.lineWidth=sel2.confirmed?3:2;}
             else{ctx.strokeStyle='rgba(255,255,255,0.1)';ctx.lineWidth=1;}
-            ctx.beginPath();ctx.roundRect(cx,cy,CARD_W,CARD_H,6);ctx.stroke();
-            const fx=cx+8,fy=cy+6,fw=CARD_W-16,fh=42;
+            ctx.beginPath();ctx.roundRect(cx,cy,CARD_W,CARD_H,5);ctx.stroke();
+            const fx=cx+5,fy=cy+4,fw=CARD_W-10,fh=28;
             ctx.save();ctx.beginPath();ctx.roundRect(fx,fy,fw,fh,3);ctx.clip();team.drawFlag(ctx,fx,fy,fw,fh);ctx.restore();
             ctx.strokeStyle='rgba(255,255,255,0.18)';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(fx,fy,fw,fh,3);ctx.stroke();
-            ctx.textAlign='center';ctx.fillStyle='white';ctx.font='bold 11px Arial';ctx.fillText(team.name,cx+CARD_W/2,cy+60);
-            ctx.fillStyle='rgba(255,255,255,0.45)';ctx.font='italic 10px Arial';ctx.fillText(team.player,cx+CARD_W/2,cy+72);
-            ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='9px Arial';ctx.fillText(team.abbr,cx+CARD_W/2,cy+83);
-            if(isP1){ctx.fillStyle=sel1.confirmed?'#4488ff':'rgba(68,136,255,0.7)';ctx.font='bold 8px Arial';ctx.textAlign='left';ctx.fillText('P1',cx+4,cy+12);}
-            if(isP2){ctx.fillStyle=sel2.confirmed?'#ff4444':'rgba(255,68,68,0.7)';ctx.font='bold 8px Arial';ctx.textAlign='right';ctx.fillText('P2',cx+CARD_W-4,cy+12);}
+            ctx.textAlign='center';ctx.fillStyle='white';ctx.font='bold 10px Arial';ctx.fillText(team.name,cx+CARD_W/2,cy+41);
+            ctx.fillStyle='rgba(255,255,255,0.45)';ctx.font='italic 9px Arial';ctx.fillText(team.player,cx+CARD_W/2,cy+51);
+            ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='8px Arial';ctx.fillText(team.abbr,cx+CARD_W/2,cy+59);
+            if(isP1){ctx.fillStyle=sel1.confirmed?'#4488ff':'rgba(68,136,255,0.8)';ctx.font='bold 8px Arial';ctx.textAlign='left';ctx.fillText('P1',cx+3,cy+11);}
+            if(isP2){ctx.fillStyle=sel2.confirmed?'#ff4444':'rgba(255,68,68,0.8)';ctx.font='bold 8px Arial';ctx.textAlign='right';ctx.fillText('P2',cx+CARD_W-3,cy+11);}
         }
     }
     ctx.textAlign='center';
     if(sel1.confirmed&&sel2.confirmed){
-        const pulse=.65+.35*Math.sin(Date.now()/280);ctx.globalAlpha=pulse;ctx.font='bold 20px Impact';ctx.fillStyle='#ffdd00';
-        ctx.fillText('PRESS SPACE OR ENTER TO KICK OFF!',W/2,H-14);ctx.globalAlpha=1;
+        const pulse=.65+.35*Math.sin(Date.now()/280);ctx.globalAlpha=pulse;ctx.font='bold 18px Impact';ctx.fillStyle='#ffdd00';
+        ctx.fillText('PRESS SPACE OR ENTER TO KICK OFF!',W/2,H-12);ctx.globalAlpha=1;
     } else {
-        ctx.font='13px Arial';ctx.fillStyle='rgba(255,255,255,0.4)';
-        ctx.fillText((sel1.confirmed?`P1: ${p1Team.name} ready!`:'P1: choose & press Space')+'     |     '+(sel2.confirmed?`P2: ${p2Team.name} ready!`:'P2: choose & press Enter'),W/2,H-14);
+        ctx.font='12px Arial';ctx.fillStyle='rgba(255,255,255,0.4)';
+        ctx.fillText((sel1.confirmed?`P1: ${p1Team.name} ready!`:'P1: choose & press Space')+'   |   '+(sel2.confirmed?`P2: ${p2Team.name} ready!`:'P2: choose & press Enter'),W/2,H-12);
     }
     drawQuizButton();
 }
@@ -696,13 +1006,11 @@ function drawGameOver() {
     ctx.fillText('PRESS SPACE TO CHOOSE TEAMS',W/2,H/2+96);ctx.globalAlpha=1;
 }
 
-// ── Quiz Drawing ──────────────────────────────────────────────────────────
+// ── Quiz Drawing ──────────────────────────────────────────────────────────────
 function drawQuizOverlay() {
-    // Background
     const bg=ctx.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#000820');bg.addColorStop(1,'#001040');
     ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
 
-    // Star field
     ctx.fillStyle='rgba(255,255,255,0.4)';
     for(let i=0;i<60;i++){const x=(i*137.5)%W,y=(i*73.1)%H;ctx.beginPath();ctx.arc(x,y,1,0,Math.PI*2);ctx.fill();}
 
@@ -710,16 +1018,13 @@ function drawQuizOverlay() {
     if(quiz.gs==='won')  { drawQuizEnd(true); return; }
     if(quiz.gs==='lost') { drawQuizEnd(false); return; }
 
-    // Prize ladder (right panel)
     const LX=612, LW=183;
     ctx.fillStyle='rgba(0,0,50,0.7)';ctx.beginPath();ctx.roundRect(LX,5,LW,470,8);ctx.fill();
     ctx.strokeStyle='rgba(100,150,255,0.3)';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(LX,5,LW,470,8);ctx.stroke();
     ctx.textAlign='center';ctx.font='bold 11px Arial';ctx.fillStyle='#aabbff';ctx.fillText('PRIZE LADDER',LX+LW/2,22);
     for(let i=14;i>=0;i--){
         const rowY=28+(14-i)*29;
-        const isCurrent=quiz.level===i;
-        const isWon=quiz.level>i;
-        const isSafe=SAFE_LEVELS.includes(i);
+        const isCurrent=quiz.level===i, isWon=quiz.level>i, isSafe=SAFE_LEVELS.includes(i);
         if(isCurrent){ctx.fillStyle='rgba(255,200,0,0.3)';ctx.beginPath();ctx.roundRect(LX+4,rowY,LW-8,26,4);ctx.fill();}
         else if(isSafe){ctx.fillStyle='rgba(255,100,0,0.12)';ctx.beginPath();ctx.roundRect(LX+4,rowY,LW-8,26,4);ctx.fill();}
         const numColor=isCurrent?'#ffdd00':isWon?'rgba(255,255,255,0.35)':isSafe?'#ff8844':'rgba(200,220,255,0.7)';
@@ -727,13 +1032,12 @@ function drawQuizOverlay() {
         ctx.fillText(''+(i+1),LX+10,rowY+18);
         ctx.textAlign='right';ctx.fillStyle=numColor;
         ctx.fillText(PRIZES[i],LX+LW-8,rowY+18);
-        if(isSafe){ctx.fillStyle=isCurrent?'#ffdd00':'#ff8844';ctx.font='9px Arial';ctx.textAlign='center';ctx.fillText('✦',LX+LW/2,rowY+18);}
+        if(isSafe){ctx.fillStyle=isCurrent?'#ffdd00':'#ff8844';ctx.font='9px Arial';ctx.textAlign='center';ctx.fillText('*',LX+LW/2,rowY+18);}
     }
 
     const q=quiz.qs[quiz.level];
     const boxes=getAnswerBoxes();
 
-    // Question box
     ctx.fillStyle='rgba(0,10,60,0.85)';ctx.beginPath();ctx.roundRect(8,10,595,130,10);ctx.fill();
     ctx.strokeStyle='rgba(100,150,255,0.5)';ctx.lineWidth=2;ctx.beginPath();ctx.roundRect(8,10,595,130,10);ctx.stroke();
     ctx.fillStyle='rgba(100,150,255,0.15)';ctx.fillRect(8,10,595,28);
@@ -742,12 +1046,9 @@ function drawQuizOverlay() {
     ctx.fillStyle='white';ctx.font='bold 15px Arial';
     wrapText(q.q,18,52,580,22,4);
 
-    // Answer boxes
     const labels=['A','B','C','D'];
     boxes.forEach((b,i)=>{
-        const isElim=quiz.elim.includes(i);
-        const isSel=quiz.sel===i;
-        const correct=q.a;
+        const isElim=quiz.elim.includes(i), isSel=quiz.sel===i, correct=q.a;
         let fill='rgba(0,20,90,0.85)',stroke='rgba(80,130,255,0.6)',textCol='white';
         if(isElim){fill='rgba(5,5,25,0.7)';stroke='rgba(30,30,60,0.4)';textCol='rgba(255,255,255,0.2)';}
         else if(quiz.phase==='locking'&&isSel){fill='rgba(180,140,0,0.8)';stroke='#ffdd00';textCol='#000';}
@@ -760,12 +1061,10 @@ function drawQuizOverlay() {
         ctx.fillStyle=textCol;
         ctx.textAlign='left';ctx.font='bold 13px Arial';ctx.fillText(labels[i]+':',b.x+12,b.y+37);
         ctx.font='12px Arial';
-        const optText=q.o[i];
-        const maxW=b.w-52;
-        ctx.fillText(ctx.measureText(optText).width>maxW?optText.substring(0,Math.floor(optText.length*maxW/ctx.measureText(optText).width)-1)+'…':optText,b.x+38,b.y+37);
+        const optText=q.o[i], maxW=b.w-52;
+        ctx.fillText(ctx.measureText(optText).width>maxW?optText.substring(0,Math.floor(optText.length*maxW/ctx.measureText(optText).width)-1)+'...':optText,b.x+38,b.y+37);
     });
 
-    // Audience bar chart
     if(quiz.audience){
         const bars=['A','B','C','D'];const bx=10,by=295,bw=60,maxH=50;
         ctx.fillStyle='rgba(0,0,0,0.4)';ctx.beginPath();ctx.roundRect(bx-4,by-56,292,76,6);ctx.fill();
@@ -781,17 +1080,15 @@ function drawQuizOverlay() {
         });
     }
 
-    // Phone hint
     if(quiz.phoneTimer>0){
         quiz.phoneTimer--;
         ctx.fillStyle='rgba(0,0,0,0.7)';ctx.beginPath();ctx.roundRect(10,290,590,50,8);ctx.fill();
         ctx.strokeStyle='rgba(100,200,100,0.5)';ctx.lineWidth=1;ctx.beginPath();ctx.roundRect(10,290,590,50,8);ctx.stroke();
         ctx.textAlign='left';ctx.font='bold 13px Arial';ctx.fillStyle='#88ff88';
-        ctx.fillText(`📞 Your friend says: "I'm pretty sure it's ${labels[q.a]}: ${q.o[q.a]}"`,20,322);
+        ctx.fillText(`Phone: "I'm pretty sure it's ${labels[q.a]}: ${q.o[q.a]}"`,20,322);
     }
 
-    // Lifelines
-    const LL=[['50:50',quiz.lifelines.fifty,'#ffcc00'],['📞 Phone',quiz.lifelines.phone,'#44ff88'],['👥 Audience',quiz.lifelines.audience,'#44aaff']];
+    const LL=[['50:50',quiz.lifelines.fifty,'#ffcc00'],['Phone',quiz.lifelines.phone,'#44ff88'],['Audience',quiz.lifelines.audience,'#44aaff']];
     if(!quiz.audience&&quiz.phoneTimer===0){
         LL.forEach(([lbl,avail,col],i)=>{
             const bx2=10+i*95,by2=300;
@@ -802,20 +1099,17 @@ function drawQuizOverlay() {
         });
     }
 
-    // Walk away button
     if(quiz.phase==='pick'&&quiz.level>0){
         ctx.fillStyle='rgba(150,50,0,0.8)';ctx.beginPath();ctx.roundRect(10,345,120,30,6);ctx.fill();
         ctx.fillStyle='white';ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillText('Walk Away',70,364);
         ctx.font='9px Arial';ctx.fillStyle='rgba(255,200,100,0.8)';ctx.fillText(quizGuaranteed(),70,374);
     }
 
-    // Back to soccer button
     ctx.fillStyle='rgba(40,40,80,0.8)';ctx.beginPath();ctx.roundRect(10,H-38,100,28,6);ctx.fill();
-    ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillText('← Soccer',60,H-20);
+    ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillText('<- Soccer',60,H-20);
 
-    // Keyboard hint
     ctx.font='9px Arial';ctx.fillStyle='rgba(255,255,255,0.2)';ctx.textAlign='center';
-    ctx.fillText('Click an answer to select   •   1/2/3/4 keys also work',300,H-8);
+    ctx.fillText('Click an answer to select   *   1/2/3/4 keys also work',300,H-8);
 }
 
 function wrapText(text, x, y, maxW, lineH, maxLines) {
@@ -824,7 +1118,7 @@ function wrapText(text, x, y, maxW, lineH, maxLines) {
         const test=line+word+' ';
         if(ctx.measureText(test).width>maxW&&line!==''){
             if(lines<maxLines-1){ctx.fillText(line,x,startY);line=word+' ';startY+=lineH;lines++;}
-            else{ctx.fillText(line+(line?'…':''),x,startY);return;}
+            else{ctx.fillText(line+(line?'...':''),x,startY);return;}
         } else line=test;
     }
     ctx.fillText(line,x,startY);
@@ -837,11 +1131,11 @@ function drawQuizIdle() {
     ctx.fillStyle=g1;ctx.fillText('WHO WANTS TO BE',W/2,H/2-80);
     ctx.font='bold 44px Impact';ctx.strokeText('A MILLIONAIRE?',W/2,H/2-28);
     ctx.fillStyle=g1;ctx.fillText('A MILLIONAIRE?',W/2,H/2-28);
-    ctx.font='16px Arial';ctx.fillStyle='rgba(255,255,255,0.6)';ctx.fillText('15 questions • 3 lifelines • First to $1,000,000',W/2,H/2+20);
+    ctx.font='16px Arial';ctx.fillStyle='rgba(255,255,255,0.6)';ctx.fillText('15 questions * 3 lifelines * First to $1,000,000',W/2,H/2+20);
     ctx.fillText('Click answers or press 1/2/3/4 to select',W/2,H/2+44);
     const pulse=.65+.35*Math.sin(Date.now()/350);ctx.globalAlpha=pulse;ctx.font='bold 22px Impact';ctx.fillStyle='#ffdd00';ctx.fillText('CLICK TO START',W/2,H/2+96);ctx.globalAlpha=1;
     ctx.fillStyle='rgba(40,40,80,0.8)';ctx.beginPath();ctx.roundRect(10,H-38,100,28,6);ctx.fill();
-    ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='bold 11px Arial';ctx.fillText('← Soccer',60,H-20);
+    ctx.fillStyle='rgba(255,255,255,0.7)';ctx.font='bold 11px Arial';ctx.fillText('<- Soccer',60,H-20);
 }
 
 function drawQuizEnd(won) {
@@ -858,7 +1152,7 @@ function drawQuizEnd(won) {
     ctx.fillStyle='#000';ctx.font='bold 16px Impact';ctx.fillText('PLAY AGAIN / BACK TO SOCCER',400,383);
 }
 
-// ── Update ────────────────────────────────────────────────────────────────
+// ── Update ────────────────────────────────────────────────────────────────────
 function updateTeamSelect() {
     if(!sel1.confirmed){
         if(justPressed('KeyA'))sel1.col=(sel1.col-1+GRID_COLS)%GRID_COLS;
@@ -885,12 +1179,10 @@ function updateTeamSelect() {
 
 function updateQuiz() {
     if(quiz.gs!=='playing')return;
-    // Keyboard 1/2/3/4 for answers
     if(quiz.phase==='pick'){
         ['Digit1','Digit2','Digit3','Digit4'].forEach((code,i)=>{
             if(justPressed(code)&&!quiz.elim.includes(i)){quiz.sel=i;quiz.phase='locking';quiz.phaseTimer=55;}
         });
-        // Escape to close
         if(justPressed('Escape')){quiz.open=false;gameState=quiz.prevGameState;}
     }
     if(quiz.phase==='locking'){
@@ -912,19 +1204,21 @@ function updateQuiz() {
 
 function update() {
     if(quiz.open){updateQuiz();Object.assign(prevKeys,keys);return;}
-    if(gameState==='teamSelect'){updateTeamSelect();}
-    else if(gameState==='gameover'){
+    if(gameState==='teamSelect'){
+        updateTeamSelect();
+    } else if(gameState==='gameover'){
         updateParticles();
+        updateSubwaySurfers();
         if(justPressed('Space')){sel1.confirmed=false;sel2.confirmed=false;gameState='teamSelect';}
-    }
-    else if(gameState==='goal'){
+    } else if(gameState==='goal'){
         updateParticles();goalTimer--;
+        updateSubwaySurfers();
         if(goalTimer<=0){gameState='playing';resetEntities();}
-    }
-    else{
+    } else {
         updatePlayer(p1,'KeyA','KeyD','KeyW','KeyS');
         updatePlayer(p2,'ArrowLeft','ArrowRight','ArrowUp','ArrowDown');
         updateBall();ballPlayerCollision(p1);ballPlayerCollision(p2);playerPlayerCollision();updateParticles();
+        updateSubwaySurfers();
         const goal=checkGoal();
         if(goal){
             if(goal==='p1'){score1++;goalScoredBy='p1';}else{score2++;goalScoredBy='p2';}
@@ -948,6 +1242,7 @@ function draw() {
     if(gameState==='goal')drawGoalFlash();
     if(gameState==='gameover')drawGameOver();
     drawQuizButton();
+    drawSubwaySurfers();
 }
 
 function resize(){
