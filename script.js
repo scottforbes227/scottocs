@@ -3,7 +3,7 @@ const ctx = canvas.getContext('2d');
 
 const W = 800, H = 480;
 const GRAVITY = 0.55, GROUND_Y = H - 70, HEAD_R = 28, BALL_R = 18;
-const GOAL_W = 60, GOAL_H = 140, PLAYER_SPD = 5.5, JUMP_V = -14, WIN_SCORE = 5;
+const GOAL_W = 60, GOAL_H = 140, PLAYER_SPD = 6.5, JUMP_V = -14, WIN_SCORE = 5;
 const GRID_COLS = 8, GRID_ROWS = 6, CARD_W = 88, CARD_H = 62, CARD_GAP = 3;
 const GRID_X = Math.round((W - (GRID_COLS * CARD_W + (GRID_COLS - 1) * CARD_GAP)) / 2);
 const GRID_Y = 68;
@@ -555,14 +555,23 @@ function useAudience() {
 function makePlayer(x, team, facing) {
     return { x, y: GROUND_Y - HEAD_R, vx: 0, vy: 0, onGround: true, facing, team, kickTimer: 0, kickCooldown: 0 };
 }
-function makeBall() {
+function makeBall(scoredBy) {
+    // Conceding team gets kick off — ball starts on their side
+    if (scoredBy === 'p2') {
+        // p2 scored (into p1's left goal) → p1 conceded → ball on p1's side heading right
+        return { x: W/2 - 80, y: GROUND_Y - 180, vx: 2.5, vy: -3, r: BALL_R, angle: 0 };
+    }
+    if (scoredBy === 'p1') {
+        // p1 scored (into p2's right goal) → p2 conceded → ball on p2's side heading left
+        return { x: W/2 + 80, y: GROUND_Y - 180, vx: -2.5, vy: -3, r: BALL_R, angle: 0 };
+    }
     const d = Math.random() < .5 ? 1 : -1;
     return { x: W/2, y: GROUND_Y - 180, vx: d*2, vy: -3, r: BALL_R, angle: 0 };
 }
-function resetEntities() {
+function resetEntities(scoredBy) {
     p1 = makePlayer(160, p1Team, 1);
     p2 = makePlayer(640, p2Team, -1);
-    ball = makeBall(); particles = [];
+    ball = makeBall(scoredBy); particles = [];
 }
 
 // ── Physics ───────────────────────────────────────────────────────────────────
@@ -574,8 +583,16 @@ function updatePlayer(p, leftCode, rightCode, jumpCode, kickCode) {
     if (justPressed(jumpCode) && p.onGround) { p.vy = JUMP_V; p.onGround = false; }
     if (justPressed(kickCode) && p.kickCooldown === 0) {
         p.kickTimer = 18; p.kickCooldown = 42;
-        p.vx += p.facing * 10;
-        if (p.onGround) p.vy = -4;
+        // Save dive: ball is behind player (between player and own goal) — dash hard toward ball
+        const ballBehind = p.facing === 1 ? ball.x < p.x + 40 : ball.x > p.x - 40;
+        const nearOwnGoal = p.facing === 1 ? p.x < W * 0.4 : p.x > W * 0.6;
+        if (ballBehind && nearOwnGoal) {
+            p.vx = Math.sign(ball.x - p.x) * 18;
+            p.vy = p.onGround ? -3 : p.vy * 0.5;
+        } else {
+            p.vx += p.facing * 12;
+            if (p.onGround) p.vy = -4;
+        }
     }
     if (p.kickTimer > 0) p.kickTimer--;
     if (p.kickCooldown > 0) p.kickCooldown--;
@@ -1213,7 +1230,7 @@ function update() {
     } else if(gameState==='goal'){
         updateParticles();goalTimer--;
         updateSubwaySurfers();
-        if(goalTimer<=0){gameState='playing';resetEntities();}
+        if(goalTimer<=0){gameState='playing';resetEntities(goalScoredBy);}
     } else {
         updatePlayer(p1,'KeyA','KeyD','KeyW','KeyS');
         updatePlayer(p2,'ArrowLeft','ArrowRight','ArrowUp','ArrowDown');
