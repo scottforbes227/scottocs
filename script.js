@@ -9,7 +9,7 @@ const GRID_X = Math.round((W - (GRID_COLS * CARD_W + (GRID_COLS - 1) * CARD_GAP)
 const GRID_Y = 68;
 
 // Subway Surfers constants
-const SS_X = W - 190, SS_Y = H - 90, SS_W = 185, SS_H = 84;
+const SS_X = W - 190, SS_Y = 5, SS_W = 185, SS_H = 84;
 const SS_HDR = 14, SS_CHAR_X = 28;
 const SS_LC = [SS_HDR + 12, SS_HDR + 35, SS_HDR + 58]; // lane centers (y relative to window)
 
