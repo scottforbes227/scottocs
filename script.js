@@ -556,14 +556,14 @@ function makePlayer(x, team, facing) {
     return { x, y: GROUND_Y - HEAD_R, vx: 0, vy: 0, onGround: true, facing, team, kickTimer: 0, kickCooldown: 0 };
 }
 function makeBall(scoredBy) {
-    // Conceding team gets kick off — ball starts on their side
+    // Conceding team gets kick off — ball drops right on their player
     if (scoredBy === 'p2') {
-        // p2 scored (into p1's left goal) → p1 conceded → ball on p1's side heading right
-        return { x: W/2 - 80, y: GROUND_Y - 180, vx: 2.5, vy: -3, r: BALL_R, angle: 0 };
+        // p2 scored → p1 conceded → ball drops on p1 (x=160)
+        return { x: 180, y: GROUND_Y - 100, vx: 0, vy: -2, r: BALL_R, angle: 0 };
     }
     if (scoredBy === 'p1') {
-        // p1 scored (into p2's right goal) → p2 conceded → ball on p2's side heading left
-        return { x: W/2 + 80, y: GROUND_Y - 180, vx: -2.5, vy: -3, r: BALL_R, angle: 0 };
+        // p1 scored → p2 conceded → ball drops on p2 (x=640)
+        return { x: 620, y: GROUND_Y - 100, vx: 0, vy: -2, r: BALL_R, angle: 0 };
     }
     const d = Math.random() < .5 ? 1 : -1;
     return { x: W/2, y: GROUND_Y - 180, vx: d*2, vy: -3, r: BALL_R, angle: 0 };
@@ -850,13 +850,13 @@ function drawHUD() {
     ctx.font='italic 10px Arial';ctx.fillStyle='rgba(255,255,255,0.55)';
     ctx.fillText(p1.team.player,GOAL_W+8,31);
     ctx.font='10px Arial';ctx.fillStyle='rgba(255,255,255,0.28)';
-    ctx.fillText('A/D  W=jump  S=kick',GOAL_W+8,43);
+    ctx.fillText('A/D  W=jump  G=kick',GOAL_W+8,43);
     ctx.textAlign='right';ctx.font='bold 11px Arial';ctx.fillStyle=p2.team.light;
     ctx.fillText(p2.team.name.toUpperCase(),W-GOAL_W-8,19);
     ctx.font='italic 10px Arial';ctx.fillStyle='rgba(255,255,255,0.55)';
     ctx.fillText(p2.team.player,W-GOAL_W-8,31);
     ctx.font='10px Arial';ctx.fillStyle='rgba(255,255,255,0.28)';
-    ctx.fillText('←/→  ↑=jump  ↓=kick',W-GOAL_W-8,43);
+    ctx.fillText('←/→  ↑=jump  M=kick',W-GOAL_W-8,43);
 }
 
 function drawGoalFlash() {
@@ -1232,8 +1232,8 @@ function update() {
         updateSubwaySurfers();
         if(goalTimer<=0){gameState='playing';resetEntities(goalScoredBy);}
     } else {
-        updatePlayer(p1,'KeyA','KeyD','KeyW','KeyS');
-        updatePlayer(p2,'ArrowLeft','ArrowRight','ArrowUp','ArrowDown');
+        updatePlayer(p1,'KeyA','KeyD','KeyW','KeyG');
+        updatePlayer(p2,'ArrowLeft','ArrowRight','ArrowUp','KeyM');
         updateBall();ballPlayerCollision(p1);ballPlayerCollision(p2);playerPlayerCollision();updateParticles();
         updateSubwaySurfers();
         const goal=checkGoal();
