@@ -551,9 +551,81 @@ function useAudience() {
     quiz.audience = pcts;
 }
 
+// ── Gun cheat code ────────────────────────────────────────────────────────────
+// P1: triple-tap F | P2: triple-tap K → gives 3 bullets, kick key fires
+const cheat1 = { taps: 0, timer: 0, code: 'KeyF' };
+const cheat2 = { taps: 0, timer: 0, code: 'KeyK' };
+let bullets = [];
+
+function updateCheatCode(cheat, player) {
+    if (cheat.timer > 0) cheat.timer--;
+    else cheat.taps = 0;
+    if (justPressed(cheat.code)) {
+        cheat.taps++; cheat.timer = 25; // ~0.4s window between taps
+        if (cheat.taps >= 3 && !player.hasGun) {
+            player.hasGun = true;
+            player.gunShots = 3;
+            player.stunTimer = 0;
+            cheat.taps = 0; cheat.timer = 0;
+        }
+    }
+}
+
+function fireBullet(p) {
+    if (!p.hasGun || p.gunShots <= 0) return false;
+    p.gunShots--;
+    bullets.push({
+        x: p.x + p.facing * (HEAD_R + 10),
+        y: p.y - 2,
+        vx: p.facing * 22,
+        owner: p,
+        life: 80,
+    });
+    if (p.gunShots <= 0) p.hasGun = false;
+    return true;
+}
+
+function updateBullets() {
+    for (const b of bullets) {
+        b.x += b.vx;
+        b.life--;
+        // Check hit on opponent
+        const target = b.owner === p1 ? p2 : p1;
+        const dx = b.x - target.x, dy = b.y - target.y;
+        if (Math.sqrt(dx * dx + dy * dy) < HEAD_R + 6) {
+            target.stunTimer = 90;
+            target.vx = Math.sign(b.vx) * 14;
+            target.vy = -8;
+            target.onGround = false;
+            // Muzzle flash particles
+            for (let i = 0; i < 15; i++) {
+                const a = Math.random() * Math.PI * 2, s = 2 + Math.random() * 6;
+                particles.push({ x: target.x, y: target.y, vx: Math.cos(a)*s, vy: Math.sin(a)*s - 3,
+                    life: 1, decay: .06 + Math.random() * .05, r: 3 + Math.random() * 4, color: '#ff2222' });
+            }
+            b.life = 0;
+        }
+    }
+    bullets = bullets.filter(b => b.life > 0 && b.x > -20 && b.x < W + 20);
+}
+
+function drawBullets() {
+    for (const b of bullets) {
+        ctx.save();
+        ctx.fillStyle = '#ffdd00';
+        ctx.shadowColor = '#ff8800'; ctx.shadowBlur = 10;
+        ctx.beginPath(); ctx.ellipse(b.x, b.y, 7, 3, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        // Trail
+        ctx.fillStyle = 'rgba(255,180,0,0.4)';
+        ctx.beginPath(); ctx.ellipse(b.x - b.vx * 0.5, b.y, 12, 2, 0, 0, Math.PI * 2); ctx.fill();
+    }
+}
+
 // ── Entity factories ──────────────────────────────────────────────────────────
 function makePlayer(x, team, facing) {
-    return { x, y: GROUND_Y - HEAD_R, vx: 0, vy: 0, onGround: true, facing, team, kickTimer: 0, kickCooldown: 0 };
+    return { x, y: GROUND_Y - HEAD_R, vx: 0, vy: 0, onGround: true, facing, team,
+             kickTimer: 0, kickCooldown: 0, hasGun: false, gunShots: 0, stunTimer: 0 };
 }
 function makeBall(scoredBy) {
     // Conceding team gets kick off — ball drops right on their player
@@ -571,27 +643,42 @@ function makeBall(scoredBy) {
 function resetEntities(scoredBy) {
     p1 = makePlayer(160, p1Team, 1);
     p2 = makePlayer(640, p2Team, -1);
-    ball = makeBall(scoredBy); particles = [];
+    ball = makeBall(scoredBy); particles = []; bullets = [];
 }
 
 // ── Physics ───────────────────────────────────────────────────────────────────
 function updatePlayer(p, leftCode, rightCode, jumpCode, kickCode) {
+    // Stun: player can't act
+    if (p.stunTimer > 0) {
+        p.stunTimer--;
+        p.vx *= 0.9;
+        p.vy += GRAVITY; p.x += p.vx; p.y += p.vy;
+        if (p.y + HEAD_R >= GROUND_Y) { p.y = GROUND_Y - HEAD_R; p.vy = 0; p.onGround = true; }
+        if (p.x < GOAL_W + HEAD_R) p.x = GOAL_W + HEAD_R;
+        if (p.x > W - GOAL_W - HEAD_R) p.x = W - GOAL_W - HEAD_R;
+        return;
+    }
     if (keys[leftCode])  { p.vx -= 1.1; p.facing = -1; }
     if (keys[rightCode]) { p.vx += 1.1; p.facing =  1; }
     p.vx *= 0.78;
     if (Math.abs(p.vx) > PLAYER_SPD) p.vx = Math.sign(p.vx) * PLAYER_SPD;
     if (justPressed(jumpCode) && p.onGround) { p.vy = JUMP_V; p.onGround = false; }
     if (justPressed(kickCode) && p.kickCooldown === 0) {
-        p.kickTimer = 18; p.kickCooldown = 42;
-        // Save dive: ball is behind player (between player and own goal) — dash hard toward ball
-        const ballBehind = p.facing === 1 ? ball.x < p.x + 40 : ball.x > p.x - 40;
-        const nearOwnGoal = p.facing === 1 ? p.x < W * 0.4 : p.x > W * 0.6;
-        if (ballBehind && nearOwnGoal) {
-            p.vx = Math.sign(ball.x - p.x) * 18;
-            p.vy = p.onGround ? -3 : p.vy * 0.5;
+        // Gun: fire bullet instead of kicking
+        if (p.hasGun && fireBullet(p)) {
+            p.kickCooldown = 20;
         } else {
-            p.vx += p.facing * 12;
-            if (p.onGround) p.vy = -4;
+            p.kickTimer = 18; p.kickCooldown = 42;
+            // Save dive: ball is behind player (between player and own goal)
+            const ballBehind = p.facing === 1 ? ball.x < p.x + 40 : ball.x > p.x - 40;
+            const nearOwnGoal = p.facing === 1 ? p.x < W * 0.4 : p.x > W * 0.6;
+            if (ballBehind && nearOwnGoal) {
+                p.vx = Math.sign(ball.x - p.x) * 18;
+                p.vy = p.onGround ? -3 : p.vy * 0.5;
+            } else {
+                p.vx += p.facing * 12;
+                if (p.onGround) p.vy = -4;
+            }
         }
     }
     if (p.kickTimer > 0) p.kickTimer--;
@@ -813,6 +900,35 @@ function drawPlayer(p, label) {
     if (p.kickCooldown>0) {
         const prog=1-p.kickCooldown/42;ctx.strokeStyle='rgba(255,200,50,0.75)';ctx.lineWidth=3;
         ctx.beginPath();ctx.arc(0,HEAD_R*1.8,10,-Math.PI/2,-Math.PI/2+prog*Math.PI*2);ctx.stroke();
+    }
+    // Gun visual
+    if (p.hasGun) {
+        const gx = p.facing * (HEAD_R + 4), gy = 2;
+        ctx.save();
+        ctx.fillStyle = '#333'; ctx.strokeStyle = '#111'; ctx.lineWidth = 1;
+        ctx.fillRect(gx, gy - 3, p.facing * 18, 6);
+        ctx.strokeRect(gx, gy - 3, p.facing * 18, 6);
+        ctx.fillStyle = '#555'; ctx.fillRect(gx + p.facing * 2, gy + 3, 5, 8);
+        ctx.restore();
+        // Ammo dots
+        for (let i = 0; i < p.gunShots; i++) {
+            ctx.fillStyle = '#ff4444';
+            ctx.beginPath(); ctx.arc(-12 + i * 8, -HEAD_R - 18, 3, 0, Math.PI * 2); ctx.fill();
+        }
+    }
+    // Stun flash
+    if (p.stunTimer > 0 && p.stunTimer % 8 < 4) {
+        ctx.save(); ctx.globalAlpha = 0.5;
+        ctx.fillStyle = '#ff0000';
+        ctx.beginPath(); ctx.arc(0, 0, HEAD_R + 5, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        // Stars around head
+        const t = Date.now() / 150;
+        for (let i = 0; i < 3; i++) {
+            const a = t + i * Math.PI * 2 / 3, r = HEAD_R + 10;
+            ctx.fillStyle = '#ffdd00'; ctx.font = 'bold 14px Arial'; ctx.textAlign = 'center';
+            ctx.fillText('*', Math.cos(a) * r, -8 + Math.sin(a) * r);
+        }
     }
     ctx.fillStyle='rgba(255,255,255,0.9)';ctx.font='bold 11px Arial';ctx.textAlign='center';
     ctx.fillText(label,0,-HEAD_R-8);
@@ -1232,9 +1348,11 @@ function update() {
         updateSubwaySurfers();
         if(goalTimer<=0){gameState='playing';resetEntities(goalScoredBy);}
     } else {
+        updateCheatCode(cheat1, p1);
+        updateCheatCode(cheat2, p2);
         updatePlayer(p1,'KeyA','KeyD','KeyW','KeyG');
         updatePlayer(p2,'ArrowLeft','ArrowRight','ArrowUp','KeyM');
-        updateBall();ballPlayerCollision(p1);ballPlayerCollision(p2);playerPlayerCollision();updateParticles();
+        updateBall();updateBullets();ballPlayerCollision(p1);ballPlayerCollision(p2);playerPlayerCollision();updateParticles();
         updateSubwaySurfers();
         const goal=checkGoal();
         if(goal){
@@ -1252,7 +1370,7 @@ function draw() {
     ctx.clearRect(0,0,W,H);
     if(quiz.open){drawQuizOverlay();return;}
     if(gameState==='teamSelect'){drawTeamSelect();return;}
-    drawBackground();drawGoals();drawParticles();
+    drawBackground();drawGoals();drawParticles();drawBullets();
     drawPlayer(p1,p1.team.player);
     drawPlayer(p2,p2.team.player);
     drawBall();drawHUD();
