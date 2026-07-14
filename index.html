@@ -3,13 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Head Soccer</title>
+    <title>Scott OCS — Experiments in Product, AI, and Design</title>
+    <meta name="description" content="Scott OCS — a modern digital playground blending product thinking, AI systems, and visual design.">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="wrapper">
-        <canvas id="canvas" width="800" height="480"></canvas>
-    </div>
+    <canvas id="ambient-canvas" aria-hidden="true"></canvas>
+    <div class="noise" aria-hidden="true"></div>
+
+    <header class="topbar">
+        <a class="brand" href="#home">SCOTTOCS</a>
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme">◐</button>
+    </header>
+
+    <main id="home">
+        <section class="hero reveal">
+            <p class="eyebrow">Independent Builder • Creative Technologist</p>
+            <h1>Designing digital experiences that feel <span id="headline-word">alive</span>.</h1>
+            <p class="subtitle">
+                I build crisp interfaces, smart automation, and brand moments that punch above their weight.
+            </p>
+            <div class="actions">
+                <a class="btn btn-primary" href="#work">See work</a>
+                <a class="btn btn-ghost" href="#contact">Get in touch</a>
+            </div>
+        </section>
+
+        <section class="stats reveal">
+            <article>
+                <h2>10+</h2>
+                <p>years building products online</p>
+            </article>
+            <article>
+                <h2>3x</h2>
+                <p>faster prototyping with AI-first workflows</p>
+            </article>
+            <article>
+                <h2>∞</h2>
+                <p>curiosity for better user experiences</p>
+            </article>
+        </section>
+
+        <section id="work" class="work reveal">
+            <h2>Featured Directions</h2>
+            <div class="card-grid">
+                <article class="card">
+                    <h3>AI Product Systems</h3>
+                    <p>From concept to shipping assistant-powered workflows that remove friction and create leverage.</p>
+                </article>
+                <article class="card">
+                    <h3>Experience Design</h3>
+                    <p>Interfaces with cinematic motion, clean hierarchy, and sharp conversion intent.</p>
+                </article>
+                <article class="card">
+                    <h3>Brand + Code</h3>
+                    <p>Identity systems translated directly into interactive components and production-ready frontends.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="quote reveal">
+            <blockquote>
+                “Good websites should feel less like pages and more like places.”
+            </blockquote>
+        </section>
+
+        <section id="contact" class="contact reveal">
+            <h2>Let’s build something memorable.</h2>
+            <p>Open to collaborations in product design, AI implementation, and creative engineering.</p>
+            <div class="contact-links">
+                <a href="mailto:hello@scottocs.com">hello@scottocs.com</a>
+                <a href="https://github.com/scottforbes227" target="_blank" rel="noreferrer">GitHub</a>
+                <a href="https://www.linkedin.com" target="_blank" rel="noreferrer">LinkedIn</a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>© <span id="year"></span> Scott OCS. Crafted with intent.</p>
+    </footer>
+
     <script src="script.js"></script>
 </body>
 </html>
