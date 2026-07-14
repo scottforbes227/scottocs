@@ -5,6 +5,47 @@
     display: none;
 }
 
+#ambient-bg {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.ambient-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(12px);
+    opacity: 0.45;
+    mix-blend-mode: screen;
+    transition: transform 0.25s ease-out;
+}
+
+.ambient-orb.orb-cyan {
+    width: 320px;
+    height: 320px;
+    left: -80px;
+    top: 8vh;
+    background: radial-gradient(circle at 30% 30%, rgba(74, 226, 255, 0.9), rgba(74, 226, 255, 0.05));
+}
+
+.ambient-orb.orb-blue {
+    width: 420px;
+    height: 420px;
+    right: -120px;
+    top: 42vh;
+    background: radial-gradient(circle at 30% 30%, rgba(33, 82, 255, 0.85), rgba(33, 82, 255, 0.04));
+}
+
+.ambient-orb.orb-violet {
+    width: 280px;
+    height: 280px;
+    left: 35vw;
+    bottom: -90px;
+    background: radial-gradient(circle at 30% 30%, rgba(150, 106, 255, 0.7), rgba(150, 106, 255, 0.03));
+}
+
 /* Simple fade-in and fade-out animations */
 .fade-in {
     animation: fadeIn 0.5s ease-in-out forwards;
@@ -239,4 +280,27 @@ section {
     border-radius: 12px;
     padding: 0.6rem;
     background: #ffffff;
+}
+
+#password-container,
+#main-content {
+    position: relative;
+    isolation: isolate;
+}
+
+#password-container::after,
+#main-content::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(115deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0));
+    pointer-events: none;
+    z-index: -1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ambient-orb {
+        transition: none;
+    }
 }

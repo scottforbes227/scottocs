@@ -34,6 +34,7 @@
         const enterButton = document.getElementById('enter-button');
         const passwordError = document.getElementById('password-error');
         const themeToggle = document.getElementById('theme-checkbox'); // <-- NEW
+        const ambientBackground = document.getElementById('ambient-bg');
         const leafletCountrySource = 'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json';
         let countriesMapInstance = null;
         let countriesMapLayer = null;
@@ -63,6 +64,26 @@
                 document.body.appendChild(bubble);
             }
         };
+
+        const initializeAmbientBackground = () => {
+            if (!ambientBackground) return;
+            ambientBackground.innerHTML = '';
+            ['orb-cyan', 'orb-blue', 'orb-violet'].forEach((name) => {
+                const orb = document.createElement('div');
+                orb.className = `ambient-orb ${name}`;
+                ambientBackground.appendChild(orb);
+            });
+        };
+
+        const updateAmbientParallax = (event) => {
+            if (!ambientBackground) return;
+            const x = (event.clientX / window.innerWidth - 0.5) * 24;
+            const y = (event.clientY / window.innerHeight - 0.5) * 24;
+            ambientBackground.querySelectorAll('.ambient-orb').forEach((orb, i) => {
+                const depth = (i + 1) * 0.55;
+                orb.style.transform = `translate(${x * depth}px, ${y * depth}px)`;
+            });
+        };
         themeToggle.addEventListener('change', () => {
             if (themeToggle.checked) {
                 localStorage.setItem('theme', 'frutiger-aero');
@@ -77,6 +98,8 @@
 
         // On page load, check for saved theme
         const savedTheme = localStorage.getItem('theme') || 'archaic';
+        initializeAmbientBackground();
+        window.addEventListener('mousemove', updateAmbientParallax);
         applyTheme(savedTheme);
         if (savedTheme === 'frutiger-aero') createAeroBubbles();
 
