@@ -34,6 +34,9 @@
         const enterButton = document.getElementById('enter-button');
         const passwordError = document.getElementById('password-error');
         const themeToggle = document.getElementById('theme-checkbox'); // <-- NEW
+        const leafletCountrySource = 'https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json';
+        let countriesMapInstance = null;
+        let countriesMapLayer = null;
 
         // ======================================================================
         // THEME TOGGLE LOGIC (NEW!) 🥝
@@ -46,6 +49,7 @@
                 document.body.classList.remove('frutiger-aero-theme');
                 themeToggle.checked = false;
             }
+            initializeCommentBoard(theme);
         };
 
         const createAeroBubbles = () => {
@@ -135,22 +139,17 @@
                 
                 if (secureData.error) {
                     document.getElementById('countries-count').textContent = '0';
-                    document.getElementById('countries-list').innerHTML = '<li>Data not available</li>';
-                    document.getElementById('current-book').textContent = 'Access denied';
+                    document.getElementById('countries-summary').textContent = 'travel data not available.';
                     return;
                 }
                 
                 const countries = secureData.countries || [];
                 document.getElementById('countries-count').textContent = countries.length;
-                document.getElementById('countries-list').innerHTML = countries.map(c => `<li>${c}</li>`).join('');
-                
-                const books = secureData.books || [];
-                document.getElementById('current-book').textContent = books[0] || "N/A";
+                renderCountriesMap(countries);
             } else {
                 // Show placeholder data if not authenticated
                 document.getElementById('countries-count').textContent = '0';
-                document.getElementById('countries-list').innerHTML = '<li>Authentication required</li>';
-                document.getElementById('current-book').textContent = 'Authentication required';
+                document.getElementById('countries-summary').textContent = 'authentication required to load travel map.';
             }
         };
 
@@ -234,6 +233,90 @@
                     () => { document.getElementById('furthest-town-info').textContent = 'location permission denied.'.toLowerCase(); }
                 );
             } else { document.getElementById('furthest-town-info').textContent = 'geolocation not available.'.toLowerCase(); }
+        }
+
+        const normalizeCountryName = (name) => name.toLowerCase().replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim();
+        const countryNameAliases = {
+            'united states': 'united states of america',
+            'usa': 'united states of america',
+            'united states of america': 'united states of america',
+            'north macedonia': 'macedonia'
+        };
+
+        function getVisitedCountrySet(countries) {
+            return new Set(countries.map(country => {
+                const normalized = normalizeCountryName(country);
+                return countryNameAliases[normalized] || normalized;
+            }));
+        }
+
+        function applyCountryLayer(countries) {
+            const visited = getVisitedCountrySet(countries);
+            if (countriesMapLayer) countriesMapLayer.remove();
+
+            fetch(leafletCountrySource)
+                .then(response => response.json())
+                .then(geojson => {
+                    countriesMapLayer = L.geoJSON(geojson, {
+                        style: (feature) => {
+                            const featureName = normalizeCountryName(feature.properties.name || '');
+                            const isVisited = visited.has(featureName);
+                            return {
+                                fillColor: isVisited ? '#2152ff' : '#d9e2f4',
+                                weight: 1,
+                                opacity: 1,
+                                color: '#a9b8d4',
+                                fillOpacity: isVisited ? 0.8 : 0.55
+                            };
+                        },
+                        onEachFeature: (feature, layer) => {
+                            layer.bindTooltip(feature.properties.name || 'Unknown');
+                        }
+                    }).addTo(countriesMapInstance);
+
+                    document.getElementById('countries-summary').textContent = `${countries.length} countries highlighted across the world map.`;
+                })
+                .catch(() => {
+                    document.getElementById('countries-summary').textContent = 'unable to load visited-countries map right now.';
+                });
+        }
+
+        function renderCountriesMap(countries) {
+            const mapTarget = document.getElementById('countries-map');
+            if (!mapTarget) return;
+            if (!window.L) {
+                leafletJs.onload = () => renderCountriesMap(countries);
+                return;
+            }
+
+            if (!countriesMapInstance) {
+                countriesMapInstance = L.map('countries-map', {
+                    worldCopyJump: true,
+                    zoomControl: false
+                }).setView([24, 12], 1.4);
+                L.control.zoom({ position: 'bottomright' }).addTo(countriesMapInstance);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(countriesMapInstance);
+            }
+
+            applyCountryLayer(countries);
+        }
+
+        function initializeCommentBoard(theme) {
+            const board = document.getElementById('comment-board');
+            if (!board) return;
+
+            board.innerHTML = '';
+            const utterances = document.createElement('script');
+            utterances.src = 'https://utteranc.es/client.js';
+            utterances.async = true;
+            utterances.crossOrigin = 'anonymous';
+            utterances.setAttribute('repo', 'scottforbes227/scottocs');
+            utterances.setAttribute('issue-term', 'pathname');
+            utterances.setAttribute('label', 'notes');
+            utterances.setAttribute('theme', theme === 'frutiger-aero' ? 'github-light' : 'preferred-color-scheme');
+            board.appendChild(utterances);
         }
 
         // ======================================================================

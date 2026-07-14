@@ -211,3 +211,32 @@ body.frutiger-aero-theme {
     border-radius: 12px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.2);
 }
+
+section {
+    padding: 1rem 1.1rem;
+    border: 1px solid rgba(116, 139, 188, 0.18);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(242, 246, 255, 0.86));
+}
+
+#map,
+#countries-map {
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(49, 74, 132, 0.08), 0 10px 24px rgba(36, 59, 117, 0.14);
+}
+
+#countries-summary,
+#furthest-town-info,
+#percent-done,
+#percent-left {
+    font-size: 0.95rem;
+    letter-spacing: 0.01em;
+}
+
+#comment-board {
+    min-height: 210px;
+    border: 1px solid #d0dcfb;
+    border-radius: 12px;
+    padding: 0.6rem;
+    background: #ffffff;
+}
